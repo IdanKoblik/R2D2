@@ -14,6 +14,8 @@ import javax.swing.text.JTextComponent
 
 class CreateIssueDialog(project: Project, issueTitle: String) : DialogWrapper(project) {
 
+    private val MAX_ISSUE_TITLE_LEN: Int = 255
+
     // TODO add a list of components
     private lateinit var issueTitleField: JTextField
 
@@ -46,17 +48,22 @@ class CreateIssueDialog(project: Project, issueTitle: String) : DialogWrapper(pr
         if (!assertComponent(issueTitleField))
             return
 
+        if (issueTitle.length > MAX_ISSUE_TITLE_LEN) {
+            JOptionPane.showMessageDialog(issueTitleField, "Title length cannot be greater then $MAX_ISSUE_TITLE_LEN", "Error", JOptionPane.ERROR_MESSAGE)
+            return
+        }
+
         val projectPath: String = ProjectManager.getInstance().openProjects[0].basePath!!
         val (hostname, namespace) = GitUtils.extractGitInfo(projectPath)
 
         if (hostname.lowercase() == "github.com") {
-            JOptionPane.showMessageDialog(null, "Github support not implemented yet", "Error", JOptionPane.ERROR_MESSAGE)
+            JOptionPane.showMessageDialog(issueTitleField, "Github support not implemented yet", "Error", JOptionPane.ERROR_MESSAGE)
             return
         }
 
         val token = GlabUtils.getGitlabToken(hostname)
         if (token == null) {
-            JOptionPane.showMessageDialog(null, "Github support not implemented yet", "Error", JOptionPane.ERROR_MESSAGE)
+            JOptionPane.showMessageDialog(issueTitleField, "Github support not implemented yet", "Error", JOptionPane.ERROR_MESSAGE)
             return
         }
 
@@ -66,7 +73,7 @@ class CreateIssueDialog(project: Project, issueTitle: String) : DialogWrapper(pr
 
     private fun assertComponent(field: JTextComponent) : Boolean {
         if (field.text.isBlank()) {
-            JOptionPane.showMessageDialog(null, "%s cannot be empty.".format(field.name), "Error", JOptionPane.ERROR_MESSAGE)
+            JOptionPane.showMessageDialog(issueTitleField, "%s cannot be empty.".format(field.name), "Error", JOptionPane.ERROR_MESSAGE)
             return false
         }
 

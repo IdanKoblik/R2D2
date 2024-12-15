@@ -5,7 +5,7 @@ import javax.swing.JOptionPane
 
 class GitlabApiImpl(issue: Issue.GitlabIssue) : AbstractGitApi(issue) {
 
-    val gitlabIssue = issue as Issue.GitlabIssue
+    private val gitlabIssue = issue
 
     override fun createIssue() {
         val projectId = fetchProjectId()
