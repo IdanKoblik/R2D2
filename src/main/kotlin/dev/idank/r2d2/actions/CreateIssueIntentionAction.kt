@@ -5,10 +5,11 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import dev.idank.r2d2.dialogs.CreateIssueDialog
+import javax.swing.SwingUtilities
 
-val NAME: String = "Create issue"
+private const val NAME: String = "Create issue"
 
-class CreateIssueIntentionAction(private val issueTitle: String) : BaseIntentionAction() {
+class CreateIssueIntentionAction(private val title: String, private val description: String?) : BaseIntentionAction() {
 
     override fun getText(): String {
         return NAME
@@ -23,8 +24,11 @@ class CreateIssueIntentionAction(private val issueTitle: String) : BaseIntention
     }
 
     override fun invoke(project: Project, editor: Editor?, file: PsiFile?) {
-        val dialog = CreateIssueDialog(project, issueTitle)
-        dialog.show()
+        if (editor != null && file != null) {
+            val dialog = CreateIssueDialog(project, title, description)
+            dialog.show()
+        }
     }
+
 
 }

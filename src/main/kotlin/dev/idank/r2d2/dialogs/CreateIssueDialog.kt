@@ -12,17 +12,19 @@ import java.awt.GridBagLayout
 import javax.swing.*
 import javax.swing.text.JTextComponent
 
-class CreateIssueDialog(project: Project, issueTitle: String) : DialogWrapper(project) {
+private const val MAX_ISSUE_TITLE_LEN: Int = 255
 
-    private val MAX_ISSUE_TITLE_LEN: Int = 255
+class CreateIssueDialog(project: Project, title: String, description: String?) : DialogWrapper(project) {
 
     // TODO add a list of components
     private lateinit var issueTitleField: JTextField
+    private lateinit var descriptionArea: JTextArea
 
     init {
         init()
         this.title = "Create GitLab Issue"
-        this.issueTitleField.text = issueTitle
+        this.issueTitleField.text = title
+        description?.let { descriptionArea.text = it }
     }
 
     // TODO add component builder
@@ -35,10 +37,23 @@ class CreateIssueDialog(project: Project, issueTitle: String) : DialogWrapper(pr
         constraints.gridy = 0
         panel.add(titleLabel, constraints)
 
-        this.issueTitleField = JTextField(20)
+        issueTitleField = JTextField(20)
         constraints.gridx = 1
         constraints.gridy = 0
         panel.add(issueTitleField, constraints)
+
+        val descriptionLabel = JLabel("Description:")
+        constraints.gridx = 0
+        constraints.gridy = 1
+        panel.add(descriptionLabel, constraints)
+
+        descriptionArea = JTextArea(5, 20)
+        descriptionArea.lineWrap = true
+        descriptionArea.wrapStyleWord = true
+        val scrollPane = JScrollPane(descriptionArea)
+        constraints.gridx = 1
+        constraints.gridy = 1
+        panel.add(scrollPane, constraints)
 
         return panel
     }
