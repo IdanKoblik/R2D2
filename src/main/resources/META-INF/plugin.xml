@@ -18,6 +18,7 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
@@ -25,5 +26,9 @@
         <annotator
             language="JAVA"
             implementationClass="dev.idank.r2d2.annotators.TODOAnnotator"/>
+
+        <annotator
+                language="kotlin"
+                implementationClass="dev.idank.r2d2.annotators.TODOAnnotator"/>
     </extensions>
 </idea-plugin>

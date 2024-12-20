@@ -9,11 +9,18 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.search.PsiTodoSearchHelperImpl
 import dev.idank.r2d2.actions.CreateIssueIntentionAction
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 
 class TODOAnnotator : Annotator {
 
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
         val containingFile = element.containingFile ?: return
+        if (element is KtCallExpression) {
+            handleKotlinTodo(element, holder)
+            return
+        }
+
         val todos = PsiTodoSearchHelperImpl(element.project).findTodoItems(element.containingFile)
 
         todos.forEach { todoItem ->
@@ -42,15 +49,19 @@ class TODOAnnotator : Annotator {
                 todoItem.textRange.endOffset - lineStartOffset
             ).replace("TODO", "").replace(":", "").trim()
 
-            holder.newAnnotation(HighlightSeverity.INFORMATION, "Create issue")
-                .range(todoRange)
-                .highlightType(ProblemHighlightType.INFORMATION)
-                .withFix(CreateIssueIntentionAction(
-                    todoText,
-                    description
-                ))
-                .create()
+            handleTodoAction(todoText, description, holder, todoRange)
         }
+    }
+
+    private fun handleTodoAction(title: String, description: String, holder: AnnotationHolder, todoRange: TextRange) {
+        holder.newAnnotation(HighlightSeverity.INFORMATION, "Create issue")
+            .range(todoRange)
+            .highlightType(ProblemHighlightType.INFORMATION)
+            .withFix(CreateIssueIntentionAction(
+                title,
+                description
+            ))
+            .create()
     }
 
     private fun handleNormalTodo(document: Document, todoLine: Int): String {
@@ -95,4 +106,27 @@ class TODOAnnotator : Annotator {
 
         return lines.joinToString("\n")
     }
+
+    private fun handleKotlinTodo(element: KtCallExpression, holder: AnnotationHolder) {
+        val callee = element.calleeExpression as? KtNameReferenceExpression
+        if (callee?.getReferencedName() != "TODO")
+            return
+
+        val arguments = element.valueArguments
+        if (arguments.isEmpty())
+            return
+
+        if (!arguments[0].text.contains("\"\"\""))
+            handleTodoAction(arguments[0].text.replace("\"", "").trim(), "No Description", holder, element.textRange)
+
+        val lines = arguments[0].text.replace("\"\"\"", "").replace(".trimIndent()", "").trim().split("\n")
+        if (lines.isEmpty())
+            return
+
+        val title = lines.firstOrNull() ?: "No Title"
+        val description = if (lines.size > 1) lines.drop(1).joinToString("\n").trim() else "No Description"
+        handleTodoAction(title, description, holder, element.textRange)
+    }
+
+
 }
