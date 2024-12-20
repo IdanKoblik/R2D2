@@ -26,7 +26,7 @@ class TODOAnnotator : Annotator {
             val todoRange = TextRange(lineStartOffset, lineEndOffset)
             val elementRange = element.textRange
             if (todoRange.startOffset < elementRange.startOffset || todoRange.endOffset > elementRange.endOffset) {
-                return@forEach  // Skip this todo item as the range is outside the element
+                return@forEach
             }
 
             val fullLineText = document.getText(todoRange).trim()
