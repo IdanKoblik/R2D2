@@ -17,12 +17,15 @@ intellij {
     version.set("2023.2.6")
     type.set("IC") // Target IDE Platform
 
-    plugins.set(listOf("com.intellij.java"))
+    plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin"))
 }
 
 dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
+    testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.1")
