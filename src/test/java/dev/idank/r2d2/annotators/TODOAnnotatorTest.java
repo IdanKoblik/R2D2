@@ -2,13 +2,17 @@ package dev.idank.r2d2.annotators;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.util.List;
 
+@RunWith(JUnit4.class)
 public class TODOAnnotatorTest extends BasePlatformTestCase {
 
     @BeforeEach
@@ -27,7 +31,7 @@ public class TODOAnnotatorTest extends BasePlatformTestCase {
     public void testNormalCommentSingleLine() {
         myFixture.configureByFile("NormalCommentSingleLine.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
-
+        
         assertTrue(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
                 .anyMatch(highlight -> highlight.getDescription().equals("Create issue")

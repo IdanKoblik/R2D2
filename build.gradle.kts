@@ -1,7 +1,9 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.9.25"
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.kotlin.jvm") version "2.1.0"
+    id("org.jetbrains.intellij.platform") version "2.2.0"
 }
 
 group = "dev.idank"
@@ -9,24 +11,36 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-intellij {
-    version.set("2023.2.6")
-    type.set("IC") // Target IDE Platform
-
-    plugins.set(listOf("com.intellij.java", "org.jetbrains.kotlin"))
-}
-
 dependencies {
+    intellijPlatform {
+        intellijIdeaCommunity("2024.2")
+
+        bundledPlugin("com.intellij.java")
+        bundledPlugin("org.jetbrains.kotlin")
+        bundledPlugin("org.jetbrains.plugins.github")
+        bundledPlugin("org.jetbrains.plugins.gitlab")
+
+        pluginVerifier()
+        zipSigner()
+
+        testFramework(TestFrameworkType.Platform)
+    }
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
 
+    testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }
@@ -42,8 +56,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("232")
-        untilBuild.set("242.*")
+        sinceBuild.set("242")
+        untilBuild.set("243.*") // Supports 243.x
     }
 
     test {
