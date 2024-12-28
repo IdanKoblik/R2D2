@@ -19,9 +19,20 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
     <depends>org.jetbrains.kotlin</depends>
+    <depends>org.jetbrains.plugins.github</depends>
+    <depends>org.jetbrains.plugins.gitlab</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <actions>
+        <action
+                id="dev.idank.r2d2.actions.InvalidateCachesAction"
+                class="dev.idank.r2d2.actions.InvalidateCachesAction"
+                text="Invalidate R2D2 Caches">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
+
     <extensions defaultExtensionNs="com.intellij">
         <annotator
             language="JAVA"

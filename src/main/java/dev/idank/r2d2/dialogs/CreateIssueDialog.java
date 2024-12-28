@@ -2,6 +2,7 @@ package dev.idank.r2d2.dialogs;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import dev.idank.r2d2.git.GitUserExtractor;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -11,11 +12,14 @@ public class CreateIssueDialog extends DialogWrapper {
 
     private static final int MAX_ISSUE_TITLE_LEN = 255;
 
+    private final Project project;
     private JTextField issueTitleField;
     private JTextArea descriptionArea;
 
     public CreateIssueDialog(Project project, String title, String description) {
         super(project);
+        this.project = project;
+
         init();
         setTitle("Create GitLab Issue");
         issueTitleField.setText(title);
@@ -68,6 +72,8 @@ public class CreateIssueDialog extends DialogWrapper {
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        GitUserExtractor.getInstance().extractUsers(project);
 
         super.doOKAction();
     }
