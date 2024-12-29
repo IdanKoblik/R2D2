@@ -232,7 +232,7 @@ public class CreateIssueDialog extends DialogWrapper {
                         String originalText = document.getText(new TextRange(start, end));
 
                         WriteCommandAction.runWriteCommandAction(project, () -> {
-                            String newText = "%s %s".formatted(originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("url")));
+                            String newText = "%s %s".formatted(originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("html_url")));
                             document.replaceString(start, end, newText);
                         });
                     } catch (JsonProcessingException e) {
