@@ -1,11 +1,10 @@
 package dev.idank.r2d2.git;
 
-public record UserData(
+public record GitUser(
         String username,
-        String token,
         String instance,
         String namespace,
-        String url
+        String url,
+        Platform platform
 ) {
-
 }

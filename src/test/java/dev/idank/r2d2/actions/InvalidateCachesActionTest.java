@@ -2,10 +2,8 @@ package dev.idank.r2d2.actions;
 
 import com.intellij.testFramework.EditorTestUtil;
 import com.intellij.testFramework.EdtTestUtil;
-import com.intellij.testFramework.PlatformTestUtil;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.idank.r2d2.git.GitUserExtractor;
-import javaslang.concurrent.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,14 +19,14 @@ public class InvalidateCachesActionTest extends BasePlatformTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        GitUserExtractor.resetInstance();
-        instance = GitUserExtractor.getInstance();
+        GitUserExtractor.Companion.resetInstance();
+        instance = GitUserExtractor.Companion.getInstance();
     }
 
     @AfterEach
     @Override
     protected void tearDown() throws Exception {
-        GitUserExtractor.resetInstance();
+        GitUserExtractor.Companion.resetInstance();
         super.tearDown();
     }
 
