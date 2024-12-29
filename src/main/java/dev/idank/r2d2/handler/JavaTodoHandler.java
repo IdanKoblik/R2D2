@@ -16,7 +16,9 @@ import java.util.Optional;
 import static dev.idank.r2d2.TodoDescriptionBuilder.*;
 
 public class JavaTodoHandler {
+
     private final TodoContext context;
+    private static int lineNum = -1;
 
     public JavaTodoHandler(TodoContext context) {
         this.context = context;
@@ -35,7 +37,7 @@ public class JavaTodoHandler {
         if (todoText.startsWith(TODO_KEYWORD + "("))
             return;
 
-        int lineNum = context.getDocument().getLineNumber(todo.getTextRange().getStartOffset());
+        lineNum = context.getDocument().getLineNumber(todo.getTextRange().getStartOffset());
         String fullLine = getFullLine(lineNum);
         Optional<TodoData> todoData = parseTodoData(todoText, fullLine, lineNum);
 
@@ -124,7 +126,7 @@ public class JavaTodoHandler {
         holder.newAnnotation(HighlightSeverity.INFORMATION, "Create issue")
                 .range(range)
                 .highlightType(ProblemHighlightType.INFORMATION)
-                .withFix(new CreateIssueIntentionAction(title, description))
+                .withFix(new CreateIssueIntentionAction(title, description, lineNum))
                 .create();
     }
 }

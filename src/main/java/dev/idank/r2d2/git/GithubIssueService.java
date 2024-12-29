@@ -29,11 +29,6 @@ public class GithubIssueService extends IssueService {
                 .post(body)
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful() || response.body() == null)
-                throw new IOException("Unexpected code " + response);
-
-            return response;
-        }
+        return client.newCall(request).execute();
     }
 }

@@ -1,27 +1,37 @@
 package dev.idank.r2d2.dialogs;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
 import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.git.*;
 import dev.idank.r2d2.utils.GitUtils;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager;
+import javax.swing.text.JTextComponent;
+import com.intellij.openapi.editor.Document;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Vector;
 
 public class CreateIssueDialog extends DialogWrapper {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int MAX_ISSUE_TITLE_LEN = 255;
     private static final int TEXT_FIELD_WIDTH = 20;
@@ -29,13 +39,18 @@ public class CreateIssueDialog extends DialogWrapper {
     private static final String NO_USER = "No user";
 
     private final Project project;
+    private final int lineNum;
+    private final Document document;
+
     private JTextField issueTitleField;
     private JTextArea descriptionArea;
     private JComboBox<String> accountCombo;
 
-    public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description) {
+    public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
         this.project = project;
+        this.lineNum = lineNum;
+        this.document = document;
 
         init();
         setTitle("Create GitLab Issue");
@@ -194,18 +209,44 @@ public class CreateIssueDialog extends DialogWrapper {
         Map<Platform, UserData> users = userExtractor.extractUsers(project, user, user.platform());
 
         if (user.platform().equals(Platform.GITHUB))
-            createIssueForPlatform(new GithubIssueService(users.get(Platform.GITHUB)));
+            createIssueForPlatform(new GithubIssueService(users.get(Platform.GITHUB)), user.platform());
         else if (user.platform().equals(Platform.GITLAB))
-            createIssueForPlatform(new GitlabIssueService(users.get(Platform.GITLAB)));
+            createIssueForPlatform(new GitlabIssueService(users.get(Platform.GITLAB)), user.platform());
     }
 
-    private void createIssueForPlatform(IssueService issueService) {
-        IssueCreator issueCreator = new IssueCreator(issueService);
-        Response response = issueCreator.createIssue(issueTitleField.getText(), descriptionArea.getText());
-        if (response.isSuccessful())
-            showSuccess("Successfully created an issue");
-        else
-            showError("An error appeared while creating an issue");
+    private void createIssueForPlatform(IssueService issueService, Platform platform) {
+        try (Response response = issueService.createIssue(issueTitleField.getText(), descriptionArea.getText())) {
+            if (response.isSuccessful()) {
+                ResponseBody responseBody = response.body();
+                String bodyString = responseBody != null ? responseBody.string() : "";
+                response.close();
+
+                showSuccess("Successfully created an issue");
+
+                if (lineNum != -1) {
+                    int start = document.getLineStartOffset(lineNum);
+                    int end = document.getLineEndOffset(lineNum);
+
+                    try {
+                        JsonNode jsonArray = objectMapper.readTree(bodyString);
+                        String originalText = document.getText(new TextRange(start, end));
+
+                        WriteCommandAction.runWriteCommandAction(project, () -> {
+                            String newText = "%s %s".formatted(originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("url")));
+                            document.replaceString(start, end, newText);
+                        });
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                        showError("Failed to process the response from the server");
+                    }
+                }
+            } else {
+                showError("An error appeared while creating an issue");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("An error occurred while processing the request");
+        }
     }
 
     public void showError(String message) {

@@ -6,6 +6,7 @@ import com.intellij.codeInspection.util.IntentionName;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
@@ -19,10 +20,12 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
 
     private final String title;
     private final String description;
+    private final int lineNum;
 
-    public CreateIssueIntentionAction(String title, String description) {
+    public CreateIssueIntentionAction(String title, String description, int lineNum) {
         this.title = title;
         this.description = description;
+        this.lineNum = lineNum;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
             return;
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            CreateIssueDialog dialog = new CreateIssueDialog(project, title, description);
+            CreateIssueDialog dialog = new CreateIssueDialog(project, title, description, lineNum, editor.getDocument());
             dialog.showAndGet();
         });
     }
