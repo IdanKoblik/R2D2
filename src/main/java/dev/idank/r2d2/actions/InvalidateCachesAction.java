@@ -3,7 +3,12 @@ package dev.idank.r2d2.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurableGroup;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
+import com.intellij.psi.codeStyle.CodeStyleConfigurable;
 import dev.idank.r2d2.git.GitUserExtractor;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +16,7 @@ public class InvalidateCachesAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        GitUserExtractor gitUserExtractor = GitUserExtractor.getInstance();
+        GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
         ApplicationManager.getApplication().runWriteAction(gitUserExtractor::invalidateCache);
 
         if (!ApplicationManager.getApplication().isUnitTestMode()) {

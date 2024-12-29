@@ -3,6 +3,9 @@ package dev.idank.r2d2.actions;
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.codeInspection.util.IntentionName;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
@@ -29,10 +32,13 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
 
     @Override
     public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
-        if (editor != null && file != null) {
+        if (editor == null || file == null)
+            return;
+
+        ApplicationManager.getApplication().invokeLater(() -> {
             CreateIssueDialog dialog = new CreateIssueDialog(project, title, description);
-            dialog.show();
-        }
+            dialog.showAndGet();
+        });
     }
 
     @Override

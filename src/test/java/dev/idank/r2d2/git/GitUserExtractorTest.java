@@ -22,14 +22,14 @@ public class GitUserExtractorTest extends BasePlatformTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        GitUserExtractor.resetInstance();
-        instance = GitUserExtractor.getInstance();
+        GitUserExtractor.Companion.resetInstance();
+        instance = GitUserExtractor.Companion.getInstance();
     }
 
     @AfterEach
     @Override
     protected void tearDown() throws Exception {
-        GitUserExtractor.resetInstance();
+        GitUserExtractor.Companion.resetInstance();
         super.tearDown();
     }
 
@@ -40,7 +40,7 @@ public class GitUserExtractorTest extends BasePlatformTestCase {
         EnumMap<Platform, UserData> testUsers = new EnumMap<>(Platform.class);
         testUsers.put(
                 Platform.GITHUB,
-                new UserData("github", "github", "github", Platform.GITHUB)
+                new UserData("github", "github", "github", "github/github", "")
         );
 
         instance.setCachedUsers(testUsers);

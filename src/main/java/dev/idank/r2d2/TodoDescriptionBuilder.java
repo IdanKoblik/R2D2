@@ -26,25 +26,25 @@ public class TodoDescriptionBuilder {
         this.startLine = startLine;
     }
 
-    public String buildNormalTodoDescription() {
-        return buildDescription(
+    public String extractNormalTodoDescription() {
+        return extractDescription(
                 line -> line.startsWith(COMMENT_PREFIX),
                 line -> line.replaceFirst("^//\\s?", "").trim()
         );
     }
 
-    public String buildBulkTodoDescription(Project project, PsiFile file) {
-        return buildDescription(
+    public String extractBulkTodoDescription(Project project, PsiFile file) {
+        return extractDescription(
                 line -> !line.contains("*/") && !isTodo(getLineRange(line), project, file),
                 String::trim
         );
     }
 
-    private String buildDescription(LineValidator validator, LineTransformer transformer) {
+    private String extractDescription(LineValidator validator, LineTransformer transformer) {
         List<String> lines = new ArrayList<>();
 
         for (int i = startLine + 1; i < document.getLineCount(); i++) {
-            String line = getLine(i);
+            String line = getLine(i).trim();
             if (line.isBlank() || line.contains("\n\n") || !validator.isValid(line))
                 break;
 

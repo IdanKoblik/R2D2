@@ -67,9 +67,9 @@ public class JavaTodoHandler {
         TodoDescriptionBuilder builder = new TodoDescriptionBuilder(context.getDocument(), lineNum);
 
         if (fullLine.startsWith(COMMENT_PREFIX))
-            description = builder.buildNormalTodoDescription();
+            description = builder.extractNormalTodoDescription();
         else if (isValidBlockComment(fullLine, lineNum))
-            description = builder.buildBulkTodoDescription(context.getProject(), context.getFile());
+            description = builder.extractBulkTodoDescription(context.getProject(), context.getFile());
         else
             return Optional.empty();
 

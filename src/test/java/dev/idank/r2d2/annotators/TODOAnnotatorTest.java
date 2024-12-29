@@ -2,7 +2,6 @@ package dev.idank.r2d2.annotators;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
