@@ -13,7 +13,6 @@ private const val CACHE_EXPIRY_TIME_MS = (5 * 60 * 1000).toLong() // 5 minutes
 
 class GitUserExtractor private constructor() {
     private var cachedUsers: EnumMap<Platform, UserData>? = null
-    private val CACHE_EXPIRY_TIME_MS = 5 * 60 * 1000L // 5 minutes
 
     @get:Synchronized
     @set:Synchronized
