@@ -1,133 +1,140 @@
 package dev.idank.r2d2.git
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil.accounts
 import org.jetbrains.plugins.github.util.GHCompatibilityUtil.getOrRequestToken
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 
-private const val CACHE_EXPIRY_TIME_MS = (5 * 60 * 1000).toLong() // 5 minutes
-
 class GitUserExtractor private constructor() {
-    private var cachedUsers: EnumMap<Platform, UserData>? = null
+    private data class CacheEntry(
+        val users: EnumMap<Platform, UserData>,
+        val timestamp: Instant = Instant.now()
+    )
 
-    @get:Synchronized
-    @set:Synchronized
-    @set:TestOnly
-    var lastCacheTime: Long = -1
-
-    @Synchronized
-    fun extractUsers(project: Project, gitUser: GitUser?, platform: Platform): Map<Platform, UserData> {
-        if (cachedUsers == null || System.currentTimeMillis() - lastCacheTime > CACHE_EXPIRY_TIME_MS) {
-            this.cachedUsers = EnumMap(Platform::class.java)
-
-            if (gitUser != null && platform == Platform.GITHUB)
-                extractGithubUserData(project, gitUser)
-
-            if (gitUser != null && platform == Platform.GITLAB)
-                extractGitLabUserData(project, gitUser)
-
-            lastCacheTime = System.currentTimeMillis()
-        }
-
-        return Collections.unmodifiableMap(cachedUsers!!)
-    }
-
-    private fun extractGithubUserData(project: Project, user: GitUser) {
-        try {
-            for (account in accounts) {
-                if (account.name == user.username && account.server.toString() == user.instance.replace("https://", "").replace("http://", "")) {
-                    synchronized(this) {
-                        cachedUsers!!.put(
-                            Platform.GITHUB, UserData(
-                                account.name,
-                                getOrRequestToken(account, project)!!,
-                                user.instance,
-                                user.namespace,
-                                user.url
-                            )
-                        )
-                    }
-
-                    break
-                }
-            }
-        } catch (e: Exception) {
-            println("Failed to fetch GitHub token: " + e.message)
-        }
-    }
-
-    private fun extractGitLabUserData(project: Project, gitlabUser: GitUser) {
-        try {
-            val persistentGitLabAccountManager = PersistentGitLabAccountManager()
-            val users = persistentGitLabAccountManager.accountsState.value.associateWith { user ->
-                runBlocking(Dispatchers.IO) {
-                    persistentGitLabAccountManager.findCredentials(user).toString()
-                }
-            }
-
-            for (user in users.keys) {
-                val normalizedServerUrl = user.server.toString()
-                    .replace("https://", "")
-                    .replace("http://", "")
-
-                if (user.name == gitlabUser.username && normalizedServerUrl == gitlabUser.instance.replace("https://", "").replace("http://", "")) {
-                    synchronized(this) {
-                        cachedUsers!!.put(
-                            Platform.GITLAB, UserData(
-                                gitlabUser.username,
-                                users[user].toString(),
-                                gitlabUser.instance,
-                                gitlabUser.namespace,
-                                gitlabUser.url
-                            )
-                        )
-                    }
-                    break
-                }
-            }
-        } catch (e: Exception) {
-            println("Error extracting GitLab user data: ${e.message}")
-            e.printStackTrace()
-        }
-    }
-
-    @Synchronized
-    fun invalidateCache() {
-        this.cachedUsers = null
-        this.lastCacheTime = -1
-    }
-
-    @TestOnly
-    @Synchronized
-    fun getCachedUsers(): Map<Platform, UserData>? {
-        return if (cachedUsers != null) Collections.unmodifiableMap(cachedUsers) else null
-    }
-
-    @TestOnly
-    @Synchronized
-    fun setCachedUsers(cachedUsers: EnumMap<Platform, UserData>?) {
-        this.cachedUsers = cachedUsers
-    }
+    private var cache: CacheEntry? = null
 
     companion object {
+        private val LOG = logger<GitUserExtractor>()
+        private val CACHE_DURATION = Duration.ofMinutes(5)
+
+        @Volatile
         private var instance: GitUserExtractor? = null
 
-        @Synchronized
-        fun getInstance(): GitUserExtractor {
-            if (instance == null) {
-                instance = GitUserExtractor()
+        @JvmStatic
+        fun getInstance(): GitUserExtractor =
+            instance ?: synchronized(this) {
+                instance ?: GitUserExtractor().also { instance = it }
             }
 
-            return instance!!
-        }
-
         @TestOnly
+        @JvmStatic
         fun resetInstance() {
             instance = null
         }
+
+        private fun String.normalizeUrl() =
+            replace(Regex("^https?://"), "")
+    }
+
+    fun extractUsers(
+        project: Project,
+        gitUser: GitUser?,
+        platform: Platform
+    ): Map<Platform, UserData> = synchronized(this) {
+        val currentCache = cache
+        if (currentCache != null &&
+            Duration.between(currentCache.timestamp, Instant.now()) < CACHE_DURATION) {
+            return@synchronized currentCache.users.toMap()
+        }
+
+        val newUsers = EnumMap<Platform, UserData>(Platform::class.java)
+
+        try {
+            when {
+                gitUser != null && platform == Platform.GITHUB ->
+                    extractGithubUserData(project, gitUser, newUsers)
+                gitUser != null && platform == Platform.GITLAB ->
+                    extractGitLabUserData(project, gitUser, newUsers)
+            }
+        } catch (e: Exception) {
+            LOG.warn("Failed to extract user data for $platform", e)
+        }
+
+        cache = CacheEntry(newUsers)
+        newUsers.toMap()
+    }
+
+    private fun extractGithubUserData(
+        project: Project,
+        user: GitUser,
+        users: EnumMap<Platform, UserData>
+    ) {
+        val normalizedInstance = user.instance.normalizeUrl()
+
+        accounts.firstOrNull { account ->
+            account.name == user.username &&
+                    account.server.toString().normalizeUrl() == normalizedInstance
+        }?.let { account ->
+            val token = getOrRequestToken(account, project)
+            if (token != null) {
+                users[Platform.GITHUB] = UserData(
+                    account.name,
+                    token,
+                    user.instance,
+                    user.namespace,
+                    user.url
+                )
+            }
+        }
+    }
+
+    private fun extractGitLabUserData(
+        project: Project,
+        gitlabUser: GitUser,
+        users: EnumMap<Platform, UserData>
+    ) {
+        val accountManager = PersistentGitLabAccountManager()
+        val normalizedUserInstance = gitlabUser.instance.normalizeUrl()
+        val gitlabAccounts = accountManager.accountsState.value
+
+        for (account in gitlabAccounts) {
+            if (account.name != gitlabUser.username ||
+                account.server.toString().normalizeUrl() != normalizedUserInstance) {
+                continue
+            }
+
+            val credentials = runBlocking {
+                accountManager.findCredentials(account)
+            }
+
+            users[Platform.GITLAB] = UserData(
+                gitlabUser.username,
+                credentials.toString(),
+                gitlabUser.instance,
+                gitlabUser.namespace,
+                gitlabUser.url
+            )
+            break
+        }
+    }
+
+    fun invalidateCache() = synchronized(this) {
+        cache = null
+    }
+
+    @TestOnly
+    fun getCachedUsers(): Map<Platform, UserData>? = synchronized(this) {
+        cache?.users?.toMap()
+    }
+
+    @TestOnly
+    fun setCachedUsers(users: EnumMap<Platform, UserData>?) = synchronized(this) {
+        cache = users?.let { CacheEntry(it) }
     }
 }
