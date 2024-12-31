@@ -3,5 +3,5 @@ default: feature_request.md
 
 contact_links:
   - name: "For bug reports, please check if your issue already exists before submitting."
-    url: "https://github.com/your-repo/issues"
+    url: "https://github.com/IdanKoblik/R2D2/issues"
     about: "GitHub issues"
