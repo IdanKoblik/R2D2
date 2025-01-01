@@ -2,6 +2,8 @@ package dev.idank.r2d2.git
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import dev.idank.r2d2.git.data.GitUser
+import dev.idank.r2d2.git.data.UserData
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil.accounts

@@ -9,7 +9,9 @@ import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
 import com.intellij.psi.codeStyle.CodeStyleConfigurable;
+import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.GitUserExtractor;
+import net.bytebuddy.build.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 public class InvalidateCachesAction extends AnAction {
@@ -17,7 +19,11 @@ public class InvalidateCachesAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
-        ApplicationManager.getApplication().runWriteAction(gitUserExtractor::invalidateCache);
+        PluginLoader pluginLoader = PluginLoader.getInstance();
+        ApplicationManager.getApplication().runWriteAction(() -> {
+            gitUserExtractor.invalidateCache();
+            pluginLoader.loadIssueData();
+        });
 
         if (!ApplicationManager.getApplication().isUnitTestMode()) {
             ApplicationManager.getApplication().invokeLater(() ->

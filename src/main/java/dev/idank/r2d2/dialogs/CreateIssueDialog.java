@@ -4,29 +4,33 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
 import com.intellij.util.ui.JBUI;
+import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.*;
-import dev.idank.r2d2.utils.GitUtils;
+import dev.idank.r2d2.git.data.GitUser;
+import dev.idank.r2d2.git.data.UserData;
+import dev.idank.r2d2.git.request.GithubIssueRequest;
+import dev.idank.r2d2.git.github.GithubService;
+import dev.idank.r2d2.git.request.GitlabIssueRequest;
+import dev.idank.r2d2.git.gitlab.GitlabService;
+import dev.idank.r2d2.git.request.IssueRequest;
+import dev.idank.r2d2.listeners.LabelSearchListener;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
-import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
-import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
-import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager;
-import javax.swing.text.JTextComponent;
-import com.intellij.openapi.editor.Document;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 public class CreateIssueDialog extends DialogWrapper {
@@ -36,21 +40,29 @@ public class CreateIssueDialog extends DialogWrapper {
     private static final int MAX_ISSUE_TITLE_LEN = 255;
     private static final int TEXT_FIELD_WIDTH = 20;
     private static final int TEXT_AREA_HEIGHT = 5;
-    private static final String NO_USER = "No user";
+    public static final String NO_USER = "No user";
 
     private final Project project;
     private final int lineNum;
     private final Document document;
+    private final LabelSearchListener labelSearchListener;
+    private final JPanel labelPanel;
 
     private JTextField issueTitleField;
     private JTextArea descriptionArea;
     private JComboBox<String> accountCombo;
+    private JTextField labelSearchField;
+    private Vector<String> allLabels;
 
     public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
         this.project = project;
         this.lineNum = lineNum;
         this.document = document;
+
+        this.labelPanel = new JPanel();
+        this.labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
+        this.labelSearchListener = new LabelSearchListener(labelPanel, labelSearchField, allLabels);
 
         init();
         setTitle("Create GitLab Issue");
@@ -70,6 +82,7 @@ public class CreateIssueDialog extends DialogWrapper {
         addTitleComponents(panel, constraints);
         addDescriptionComponents(panel, constraints);
         addGitComponents(panel, constraints);
+        addLabelComponents(panel, constraints);
 
         return panel;
     }
@@ -109,12 +122,7 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 2;
         panel.add(new JLabel("Git Account:"), constraints);
 
-        Vector<String> accounts = new Vector<>();
-        Vector<String> githubAccounts = getGitHubAccounts();
-        Vector<String> gitLabAccounts = getGitLabAccounts();
-
-        accounts.addAll(githubAccounts);
-        accounts.addAll(gitLabAccounts);
+        Vector<String> accounts = PluginLoader.getInstance().getGitAccounts();
         accounts.add(NO_USER);
         accountCombo = new JComboBox<>(accounts);
 
@@ -122,39 +130,34 @@ public class CreateIssueDialog extends DialogWrapper {
         panel.add(accountCombo, constraints);
     }
 
-    private Vector<String> getGitHubAccounts() {
-        Vector<String> accounts = new Vector<>();
-        if (githubAccountsSize() == 0)
-            return accounts;
+    private void addLabelComponents(JPanel panel, GridBagConstraints constraints) {
+        constraints.gridx = 2;
+        constraints.gridy = 0;
+        constraints.anchor = GridBagConstraints.WEST;
+        panel.add(new JLabel("Labels:"), constraints);
 
-        for (GithubAccount account : GHAccountsUtil.getAccounts()) {
-            String serverUrl = account.getServer().toString();
-            if (GitUtils.extractGitInfo(ProjectManager.getInstance().getOpenProjects()[0].getBasePath(), this)
-                    .containsKey(serverUrl)) {
-                accounts.add(account.getName() + " / " + account.getServer().getSchema() +"://" + account.getServer() + " / " + Platform.GITHUB.getName());
-            }
-        }
+        labelSearchField = new JTextField(TEXT_FIELD_WIDTH);
+        labelSearchField.getDocument().addDocumentListener(labelSearchListener);
 
-        return accounts;
+        constraints.gridx = 3;
+        constraints.gridy = 0;
+        panel.add(labelSearchField, constraints);
+
+        JScrollPane labelScrollPane = new JScrollPane(labelPanel);
+        labelScrollPane.setPreferredSize(new Dimension(150, 100));
+
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.BOTH;
+        panel.add(labelScrollPane, constraints);
+
+        populateLabels();
     }
 
-    private Vector<String> getGitLabAccounts() {
-        Vector<String> accounts = new Vector<>();
-        if (gitlabAccountsSize() == 0)
-            return accounts;
-
-        PersistentGitLabAccountManager accountManager = new PersistentGitLabAccountManager();
-        for (GitLabAccount account : accountManager.getAccountsState().getValue()) {
-            String server = account.getServer().toString();
-            String cleanServer = server.replace("https://", "").replace("http://", "");
-
-            if (GitUtils.extractGitInfo(ProjectManager.getInstance().getOpenProjects()[0].getBasePath(), this)
-                    .containsKey(cleanServer)) {
-                accounts.add(account.getName() + " / " + server + " / " + Platform.GITLAB.getName());
-            }
-        }
-
-        return accounts;
+    private void populateLabels() {
+        allLabels = new Vector<>(PluginLoader.getInstance().getIssueData().labels());
+        labelSearchListener.updateLabelPanel(allLabels);
     }
 
     @Override
@@ -165,8 +168,9 @@ public class CreateIssueDialog extends DialogWrapper {
         if (!validateTitle())
             return;
 
-        GitUser git = createGitHubUser();
+        GitUser git = PluginLoader.getInstance().createGitUser(getSelectedAccount());
         createIssues(git);
+
         super.doOKAction();
     }
 
@@ -192,30 +196,26 @@ public class CreateIssueDialog extends DialogWrapper {
         return true;
     }
 
-    private GitUser createGitHubUser() {
-        if (getSelectedAccount().equals(NO_USER))
-            return null;
-
-        String[] account = getSelectedAccount().split(" / ");
-        GitInfo gitInfo = GitUtils.extractGitInfo(ProjectManager.getInstance().getOpenProjects()[0].getBasePath(), this).get(
-                account[1].replace("https://", "").replace("http://", "")
-        );
-
-        return new GitUser(account[0], account[1], gitInfo.namespace(), gitInfo.url(), Platform.fromName(account[2]));
-    }
-
     private void createIssues(GitUser user) {
         GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
         Map<Platform, UserData> users = userExtractor.extractUsers(project, user, user.platform());
 
         if (user.platform().equals(Platform.GITHUB))
-            createIssueForPlatform(new GithubIssueService(users.get(Platform.GITHUB)), user.platform());
+            createIssueForPlatform(new GithubService(users.get(Platform.GITHUB)), user.platform(), new GithubIssueRequest(
+                    issueTitleField.getText(),
+                    descriptionArea.getText(),
+                    getSelectedLabels()
+            ));
         else if (user.platform().equals(Platform.GITLAB))
-            createIssueForPlatform(new GitlabIssueService(users.get(Platform.GITLAB)), user.platform());
+            createIssueForPlatform(new GitlabService(users.get(Platform.GITLAB)), user.platform(), new GitlabIssueRequest(
+                    issueTitleField.getText(),
+                    descriptionArea.getText(),
+                    getSelectedLabels()
+            ));
     }
 
-    private void createIssueForPlatform(IssueService issueService, Platform platform) {
-        try (Response response = issueService.createIssue(issueTitleField.getText(), descriptionArea.getText())) {
+    private <T extends IssueRequest> void createIssueForPlatform(GitService<T> gitService, Platform platform, T data) {
+        try (Response response = gitService.createIssue(data)) {
             if (response.isSuccessful()) {
                 ResponseBody responseBody = response.body();
                 String bodyString = responseBody != null ? responseBody.string() : "";
@@ -232,7 +232,7 @@ public class CreateIssueDialog extends DialogWrapper {
                         String originalText = document.getText(new TextRange(start, end));
 
                         WriteCommandAction.runWriteCommandAction(project, () -> {
-                            String newText = "%s %s".formatted(originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("html_url")));
+                            String newText = String.format("%s %s", originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("html_url")));
                             document.replaceString(start, end, newText);
                         });
                     } catch (JsonProcessingException e) {
@@ -253,7 +253,7 @@ public class CreateIssueDialog extends DialogWrapper {
         JOptionPane.showMessageDialog(issueTitleField, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private void showSuccess(String message) {
+    public void showSuccess(String message) {
         JOptionPane.showMessageDialog(issueTitleField, message, "Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -262,19 +262,24 @@ public class CreateIssueDialog extends DialogWrapper {
             showError(field.getName() + " cannot be empty.");
             return false;
         }
+
         return true;
-    }
-
-    private int gitlabAccountsSize() {
-        return new PersistentGitLabAccountManager().getAccountsState().getValue().size();
-    }
-
-    private int githubAccountsSize() {
-        return GHAccountsUtil.getAccounts().size();
     }
 
     private String getSelectedAccount() {
         return (String) accountCombo.getSelectedItem();
     }
 
+    private Set<String> getSelectedLabels() {
+        Set<String> selectedLabels = new HashSet<>();
+        for (Component comp : labelPanel.getComponents()) {
+            if (comp instanceof JCheckBox checkBox) {
+                if (checkBox.isSelected()) {
+                    selectedLabels.add(checkBox.getText());
+                }
+            }
+        }
+
+        return selectedLabels;
+    }
 }

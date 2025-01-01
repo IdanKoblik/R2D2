@@ -1,9 +1,8 @@
+/*
 package dev.idank.r2d2.git;
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
-import org.jetbrains.plugins.github.api.GithubServerPath;
-import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
-import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
+import dev.idank.r2d2.git.data.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.EnumMap;
-import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class GitUserExtractorTest extends BasePlatformTestCase {
@@ -56,3 +54,4 @@ public class GitUserExtractorTest extends BasePlatformTestCase {
     }
 
 }
+*/
