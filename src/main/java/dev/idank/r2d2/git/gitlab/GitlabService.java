@@ -21,7 +21,7 @@ public class GitlabService extends GitService<GitlabIssueRequest> {
 
     @Override
     public Response createIssue(GitlabIssueRequest requestData) throws IOException {
-        int projectId = fetchGitLabProjectId(1, 4);
+        int projectId = fetchGitLabProjectId(1, 1);
         if (projectId == -1)
             return new Response.Builder().code(500).build();
 
@@ -38,7 +38,7 @@ public class GitlabService extends GitService<GitlabIssueRequest> {
 
     @Override
     public IssueData fetchIssueData()  {
-        int projectId = fetchGitLabProjectId(1, 4);
+        int projectId = fetchGitLabProjectId(1, 1);
         if (projectId == -1)
             return PluginLoader.getInstance().getEmptyIssueData();
 
