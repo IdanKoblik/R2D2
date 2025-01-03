@@ -7,6 +7,7 @@ import java.util.Set;
 public record GitlabIssueRequest(
         @JsonProperty("title") String title,
         @JsonProperty("description") String description,
-        @JsonProperty("labels") Set<String> labels
+        @JsonProperty("labels") Set<String> labels,
+        @JsonProperty("assignee_ids") Set<Integer> ids
 ) implements IssueRequest {
 }

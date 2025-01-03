@@ -1,12 +1,16 @@
 package dev.idank.r2d2.git.github;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import dev.idank.r2d2.git.GitService;
 import dev.idank.r2d2.git.data.IssueData;
+import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GithubService extends GitService<GithubIssueRequest> {
 
@@ -29,15 +33,9 @@ public class GithubService extends GitService<GithubIssueRequest> {
 
     @Override
     public IssueData fetchIssueData() {
-        String url = "%s/repos/%s/labels".formatted(resolveInstance(), data.namespace());
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer " + data.token())
-                .get()
-                .build();
-
         return new IssueData(
-                fetchIssues(request)
+                fetchIssues("%s/repos/%s/labels".formatted(resolveInstance(), data.namespace())),
+                getUsers("%s/repos/%s/assignees".formatted(resolveInstance(), data.namespace()), "login")
         );
     }
 

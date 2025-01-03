@@ -37,16 +37,12 @@ public class GitlabService extends GitService<GitlabIssueRequest> {
 
     @Override
     public IssueData fetchIssueData()  {
-        String url = data.instance() + "/api/v4/projects/" + namespace + "/labels";
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer " + data.token())
-                .get()
-                .build();
-
         return new IssueData(
-                fetchIssues(request)
+                fetchIssues( data.instance() + "/api/v4/projects/" + namespace + "/labels"),
+                getUsers( data.instance() + "/api/v4/projects/" + namespace + "/users?exclude_bots=true", "username")
         );
     }
+
+
 
 }

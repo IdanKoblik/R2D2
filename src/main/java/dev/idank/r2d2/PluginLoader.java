@@ -30,8 +30,6 @@ import static dev.idank.r2d2.dialogs.CreateIssueDialog.NO_USER;
 
 public class PluginLoader {
 
-    private final IssueData emptyIssueData = new IssueData(Set.of());
-
     private static PluginLoader instance;
     private IssueData issueData;
     private Project project;
@@ -121,10 +119,6 @@ public class PluginLoader {
 
     private int githubAccountsSize() {
         return GHAccountsUtil.getAccounts().size();
-    }
-
-    public IssueData getEmptyIssueData() {
-        return emptyIssueData;
     }
 
     public Project getProject() {

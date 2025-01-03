@@ -1,6 +1,5 @@
 package dev.idank.r2d2.dialogs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -14,45 +13,51 @@ import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.*;
 import dev.idank.r2d2.git.data.GitUser;
+import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
 import dev.idank.r2d2.git.github.GithubService;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
 import dev.idank.r2d2.git.gitlab.GitlabService;
 import dev.idank.r2d2.git.request.IssueRequest;
-import dev.idank.r2d2.listeners.LabelSearchListener;
+import dev.idank.r2d2.listeners.SearchListener;
+import dev.idank.r2d2.utils.UIUtils;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class CreateIssueDialog extends DialogWrapper {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final int MAX_ISSUE_TITLE_LEN = 255;
-    private static final int TEXT_FIELD_WIDTH = 20;
-    private static final int TEXT_AREA_HEIGHT = 5;
+    public static final int MAX_ISSUE_TITLE_LEN = 255;
+    public static final int TEXT_FIELD_WIDTH = 20;
+    public static final int TEXT_AREA_HEIGHT = 5;
     public static final String NO_USER = "No user";
 
     private final Project project;
     private final int lineNum;
     private final Document document;
-    private final LabelSearchListener labelSearchListener;
-    private final JPanel labelPanel;
 
-    private JTextField issueTitleField;
-    private JTextArea descriptionArea;
-    private JComboBox<String> accountCombo;
+    private final JTextField titleField;
+    private final JTextArea descriptionArea;
+    private final JComboBox<String> accountCombo;
+
+    private final JPanel labelPanel;
     private JTextField labelSearchField;
-    private Vector<String> allLabels;
+
+    private final JPanel assigneesPanel;
+    private JTextField assigneesSearchField;
+
+   /* private final SelectionPanel labelPanel;
+    private final SelectionPanel assigneesPanel;*/
 
     public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
@@ -60,18 +65,32 @@ public class CreateIssueDialog extends DialogWrapper {
         this.lineNum = lineNum;
         this.document = document;
 
+        titleField = new JTextField(TEXT_FIELD_WIDTH);
+        titleField.setText(title);
+
+        descriptionArea = new JTextArea(TEXT_AREA_HEIGHT, TEXT_FIELD_WIDTH);
+        descriptionArea.setText(description);
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setWrapStyleWord(true);
+
+        Vector<String> accounts = PluginLoader.getInstance().getGitAccounts();
+        accounts.add(NO_USER);
+        accountCombo = new JComboBox<>(accounts);
+
         this.labelPanel = new JPanel();
         this.labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
-        this.labelSearchListener = new LabelSearchListener(labelPanel, labelSearchField, allLabels);
+
+        this.assigneesPanel = new JPanel();
+        this.assigneesPanel.setLayout(new BoxLayout(assigneesPanel, BoxLayout.Y_AXIS));
+
+
+        //labelPanel = new SelectionPanel("Labels", PluginLoader.getInstance().getIssueData().labels());
+/*        assigneesPanel = new SelectionPanel("Assignees", PluginLoader.getInstance().getIssueData().users().stream()
+                .map(User::username)
+                .collect(Collectors.toSet()));*/
 
         init();
         setTitle("Create GitLab Issue");
-        setupInitialValues(title, description);
-    }
-
-    private void setupInitialValues(String title, String description) {
-        issueTitleField.setText(title);
-        descriptionArea.setText(description);
     }
 
     @Override
@@ -83,6 +102,7 @@ public class CreateIssueDialog extends DialogWrapper {
         addDescriptionComponents(panel, constraints);
         addGitComponents(panel, constraints);
         addLabelComponents(panel, constraints);
+        addAssigneesComponents(panel, constraints);
 
         return panel;
     }
@@ -99,19 +119,14 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 0;
         panel.add(new JLabel("Issue Title:"), constraints);
 
-        issueTitleField = new JTextField(TEXT_FIELD_WIDTH);
         constraints.gridx = 1;
-        panel.add(issueTitleField, constraints);
+        panel.add(titleField, constraints);
     }
 
     private void addDescriptionComponents(JPanel panel, GridBagConstraints constraints) {
         constraints.gridx = 0;
         constraints.gridy = 1;
         panel.add(new JLabel("Description:"), constraints);
-
-        descriptionArea = new JTextArea(TEXT_AREA_HEIGHT, TEXT_FIELD_WIDTH);
-        descriptionArea.setLineWrap(true);
-        descriptionArea.setWrapStyleWord(true);
 
         constraints.gridx = 1;
         panel.add(new JScrollPane(descriptionArea), constraints);
@@ -124,7 +139,6 @@ public class CreateIssueDialog extends DialogWrapper {
 
         Vector<String> accounts = PluginLoader.getInstance().getGitAccounts();
         accounts.add(NO_USER);
-        accountCombo = new JComboBox<>(accounts);
 
         constraints.gridx = 1;
         panel.add(accountCombo, constraints);
@@ -133,11 +147,9 @@ public class CreateIssueDialog extends DialogWrapper {
     private void addLabelComponents(JPanel panel, GridBagConstraints constraints) {
         constraints.gridx = 2;
         constraints.gridy = 0;
-        constraints.anchor = GridBagConstraints.WEST;
         panel.add(new JLabel("Labels:"), constraints);
 
         labelSearchField = new JTextField(TEXT_FIELD_WIDTH);
-        labelSearchField.getDocument().addDocumentListener(labelSearchListener);
 
         constraints.gridx = 3;
         constraints.gridy = 0;
@@ -149,137 +161,160 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridx = 2;
         constraints.gridy = 1;
         constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.BOTH;
         panel.add(labelScrollPane, constraints);
 
-        populateLabels();
+        Vector<String> users = PluginLoader.getInstance().getIssueData().labels().stream()
+                .distinct().collect(Collectors.toCollection(Vector::new));
+
+        SearchListener searchListener = new SearchListener(labelPanel, labelSearchField, users);
+        searchListener.updatePanel(users);
     }
 
-    private void populateLabels() {
-        allLabels = new Vector<>(PluginLoader.getInstance().getIssueData().labels());
-        labelSearchListener.updateLabelPanel(allLabels);
+    private void addAssigneesComponents(JPanel panel, GridBagConstraints constraints) {
+        constraints.gridx = 4;
+        constraints.gridy = 0;
+        panel.add(new JLabel("Assignees:"), constraints);
+
+        assigneesSearchField = new JTextField(TEXT_FIELD_WIDTH);
+
+        constraints.gridx = 6;
+        constraints.gridy = 0;
+        panel.add(assigneesSearchField, constraints);
+
+        JScrollPane assigneesScrollPane = new JScrollPane(assigneesPanel);
+        assigneesScrollPane.setPreferredSize(new Dimension(150, 100));
+
+        constraints.gridx = 4;
+        constraints.gridy = 1;
+        constraints.gridwidth = 4;
+        panel.add(assigneesScrollPane, constraints);
+
+        Vector<String> users = PluginLoader.getInstance().getIssueData().users().stream().map(user -> user.username() + " : " + user.id())
+                .distinct().collect(Collectors.toCollection(Vector::new));
+
+        SearchListener searchListener = new SearchListener(assigneesPanel, assigneesSearchField, users);
+        searchListener.updatePanel(users);
     }
 
     @Override
     protected void doOKAction() {
-        if (!validateUserSelection())
-            return;
-
-        if (!validateTitle())
+        if (!validateInput())
             return;
 
         GitUser git = PluginLoader.getInstance().createGitUser(getSelectedAccount());
-        createIssues(git);
+        createIssue(git);
 
         super.doOKAction();
     }
 
-    private boolean validateUserSelection() {
+    private boolean validateInput() {
         if (getSelectedAccount().equals(NO_USER)) {
-            showError("You must have at least one git user connected to idea");
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, VcsManagerConfigurable.APPLICATION_CONFIGURABLE.getName());
+            UIUtils.showError("You must have at least one git user connected to idea", titleField);
+            ShowSettingsUtil.getInstance().showSettingsDialog(project,
+                    VcsManagerConfigurable.APPLICATION_CONFIGURABLE.getName());
             return false;
         }
 
-        return true;
+        return validateTitle();
     }
 
     private boolean validateTitle() {
-        if (!assertComponent(issueTitleField))
+        String title = getTitle();
+        if (title.isBlank()) {
+            UIUtils.showError("Title cannot be empty.", titleField);
             return false;
+        }
 
-        if (issueTitleField.getText().length() > MAX_ISSUE_TITLE_LEN) {
-            showError("Title length cannot be greater than " + MAX_ISSUE_TITLE_LEN);
+        if (title.length() > MAX_ISSUE_TITLE_LEN) {
+            UIUtils.showError("Title length cannot be greater than " + MAX_ISSUE_TITLE_LEN, titleField);
             return false;
         }
 
         return true;
     }
 
-    private void createIssues(GitUser user) {
+    private void createIssue(GitUser user) {
         GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
-        Map<Platform, UserData> users = userExtractor.extractUsers(project, user, user.platform());
+        Platform platform = user.platform();
+        Map<Platform, UserData> users = userExtractor.extractUsers(project, user, platform);
 
-        if (user.platform().equals(Platform.GITHUB))
-            createIssueForPlatform(new GithubService(users.get(Platform.GITHUB)), user.platform(), new GithubIssueRequest(
-                    issueTitleField.getText(),
-                    descriptionArea.getText(),
-                    getSelectedLabels()
-            ));
-        else if (user.platform().equals(Platform.GITLAB))
-            createIssueForPlatform(new GitlabService(users.get(Platform.GITLAB)), user.platform(), new GitlabIssueRequest(
-                    issueTitleField.getText(),
-                    descriptionArea.getText(),
-                    getSelectedLabels()
-            ));
+        if (platform == Platform.GITHUB) {
+            GithubIssueRequest request = new GithubIssueRequest(
+                    getTitle(),
+                    getDescription(),
+                    getSelectedItems(labelPanel),
+                    getSelectedItems(assigneesPanel)
+            );
+
+            processIssueCreation(new GithubService(users.get(platform)), request, platform);
+        } else if (platform == Platform.GITLAB) {
+            GitlabIssueRequest request = new GitlabIssueRequest(
+                    getTitle(),
+                    getDescription(),
+                    getSelectedItems(labelPanel),
+                    getSelectedItems(assigneesPanel).stream().map(
+                            item -> Integer.parseInt(item.trim().split(" : ")[1])
+                    ).collect(Collectors.toSet())
+            );
+
+            processIssueCreation(new GitlabService(users.get(platform)), request, platform);
+        }
     }
 
-    private <T extends IssueRequest> void createIssueForPlatform(GitService<T> gitService, Platform platform, T data) {
-        try (Response response = gitService.createIssue(data)) {
-            if (response.isSuccessful()) {
-                ResponseBody responseBody = response.body();
-                String bodyString = responseBody != null ? responseBody.string() : "";
-                response.close();
+    private <T extends IssueRequest> void processIssueCreation(GitService<T> gitService, T request, Platform platform) {
+        try (Response response = gitService.createIssue(request)) {
+            if (!response.isSuccessful()) {
+                UIUtils.showError("An error appeared while creating an issue", titleField);
+                return;
+            }
 
-                showSuccess("Successfully created an issue");
+            String bodyString = response.body() != null ? response.body().string() : "";
+            UIUtils.showSuccess("Successfully created an issue", titleField);
 
-                if (lineNum != -1) {
-                    int start = document.getLineStartOffset(lineNum);
-                    int end = document.getLineEndOffset(lineNum);
-
-                    try {
-                        JsonNode jsonArray = objectMapper.readTree(bodyString);
-                        String originalText = document.getText(new TextRange(start, end));
-
-                        WriteCommandAction.runWriteCommandAction(project, () -> {
-                            String newText = String.format("%s %s", originalText, (platform == Platform.GITLAB ? jsonArray.get("web_url") : jsonArray.get("html_url")));
-                            document.replaceString(start, end, newText);
-                        });
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                        showError("Failed to process the response from the server");
-                    }
-                }
-            } else {
-                showError("An error appeared while creating an issue");
+            if (lineNum >= 0) {
+                updateDocument(bodyString, platform);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            showError("An error occurred while processing the request");
+            UIUtils.showError("An error occurred while processing the request", titleField);
         }
     }
 
-    public void showError(String message) {
-        JOptionPane.showMessageDialog(issueTitleField, message, "Error", JOptionPane.ERROR_MESSAGE);
+    private void updateDocument(String responseBody, Platform platform) throws Exception {
+        JsonNode jsonArray = objectMapper.readTree(responseBody);
+        int start = document.getLineStartOffset(lineNum);
+        int end = document.getLineEndOffset(lineNum);
+        String originalText = document.getText(new TextRange(start, end));
+        String url = platform == Platform.GITLAB ?
+                jsonArray.get("web_url").asText() :
+                jsonArray.get("html_url").asText();
+
+        WriteCommandAction.runWriteCommandAction(project, () -> {
+            document.replaceString(start, end, originalText + " " + url);
+        });
     }
 
-    public void showSuccess(String message) {
-        JOptionPane.showMessageDialog(issueTitleField, message, "Success", JOptionPane.INFORMATION_MESSAGE);
+    public String getTitle() {
+        return titleField.getText();
     }
 
-    private boolean assertComponent(JTextComponent field) {
-        if (field.getText().isBlank()) {
-            showError(field.getName() + " cannot be empty.");
-            return false;
-        }
-
-        return true;
+    public String getDescription() {
+        return descriptionArea.getText();
     }
 
-    private String getSelectedAccount() {
+    public String getSelectedAccount() {
         return (String) accountCombo.getSelectedItem();
     }
 
-    private Set<String> getSelectedLabels() {
-        Set<String> selectedLabels = new HashSet<>();
-        for (Component comp : labelPanel.getComponents()) {
-            if (comp instanceof JCheckBox checkBox) {
-                if (checkBox.isSelected()) {
-                    selectedLabels.add(checkBox.getText());
-                }
+    public Set<String> getSelectedItems(JPanel panel) {
+        Set<String> selected = new HashSet<>();
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JCheckBox checkbox && checkbox.isSelected()) {
+                selected.add(checkbox.getText());
             }
         }
 
-        return selectedLabels;
+        return selected;
     }
+
 }
