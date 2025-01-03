@@ -4,6 +4,7 @@ import java.util.Set;
 
 public record IssueData(
         Set<String> labels,
-        Set<User> users
+        Set<User> users,
+        Set<Milestone> milestones
 ) {
 }

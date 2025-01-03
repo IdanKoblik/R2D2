@@ -6,4 +6,5 @@ public sealed interface IssueRequest permits GithubIssueRequest, GitlabIssueRequ
     String title();
     String description();
     Set<String> labels();
+    String milestone();
 }

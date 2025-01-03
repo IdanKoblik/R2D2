@@ -13,6 +13,7 @@ import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.*;
 import dev.idank.r2d2.git.data.GitUser;
+import dev.idank.r2d2.git.data.Milestone;
 import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
@@ -41,6 +42,7 @@ public class CreateIssueDialog extends DialogWrapper {
     public static final int TEXT_FIELD_WIDTH = 20;
     public static final int TEXT_AREA_HEIGHT = 5;
     public static final String NO_USER = "No user";
+    public static final String NO_MILESTONE = "No milestone";
 
     private final Project project;
     private final int lineNum;
@@ -51,13 +53,9 @@ public class CreateIssueDialog extends DialogWrapper {
     private final JComboBox<String> accountCombo;
 
     private final JPanel labelPanel;
-    private JTextField labelSearchField;
-
     private final JPanel assigneesPanel;
-    private JTextField assigneesSearchField;
 
-   /* private final SelectionPanel labelPanel;
-    private final SelectionPanel assigneesPanel;*/
+    private final JComboBox<String> milestoneCombo;
 
     public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
@@ -77,17 +75,18 @@ public class CreateIssueDialog extends DialogWrapper {
         accounts.add(NO_USER);
         accountCombo = new JComboBox<>(accounts);
 
+        Vector<String> milestones = PluginLoader.getInstance().getIssueData().milestones().stream()
+                .map(milestone -> milestone.name() + " : " + milestone.id())
+                .distinct().collect(Collectors.toCollection(Vector::new));
+
+        milestones.add(NO_MILESTONE);
+        milestoneCombo = new JComboBox<>(milestones);
+
         this.labelPanel = new JPanel();
         this.labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
 
         this.assigneesPanel = new JPanel();
         this.assigneesPanel.setLayout(new BoxLayout(assigneesPanel, BoxLayout.Y_AXIS));
-
-
-        //labelPanel = new SelectionPanel("Labels", PluginLoader.getInstance().getIssueData().labels());
-/*        assigneesPanel = new SelectionPanel("Assignees", PluginLoader.getInstance().getIssueData().users().stream()
-                .map(User::username)
-                .collect(Collectors.toSet()));*/
 
         init();
         setTitle("Create GitLab Issue");
@@ -103,6 +102,7 @@ public class CreateIssueDialog extends DialogWrapper {
         addGitComponents(panel, constraints);
         addLabelComponents(panel, constraints);
         addAssigneesComponents(panel, constraints);
+        addMilestonesComponents(panel, constraints);
 
         return panel;
     }
@@ -137,11 +137,17 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 2;
         panel.add(new JLabel("Git Account:"), constraints);
 
-        Vector<String> accounts = PluginLoader.getInstance().getGitAccounts();
-        accounts.add(NO_USER);
-
         constraints.gridx = 1;
         panel.add(accountCombo, constraints);
+    }
+
+    private void addMilestonesComponents(JPanel panel, GridBagConstraints constraints) {
+        constraints.gridx = 1;
+        constraints.gridy = 2;
+        panel.add(new JLabel("Milestones:"), constraints);
+
+        constraints.gridx = 2;
+        panel.add(milestoneCombo, constraints);
     }
 
     private void addLabelComponents(JPanel panel, GridBagConstraints constraints) {
@@ -149,7 +155,7 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 0;
         panel.add(new JLabel("Labels:"), constraints);
 
-        labelSearchField = new JTextField(TEXT_FIELD_WIDTH);
+        JTextField labelSearchField = new JTextField(TEXT_FIELD_WIDTH);
 
         constraints.gridx = 3;
         constraints.gridy = 0;
@@ -175,7 +181,7 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 0;
         panel.add(new JLabel("Assignees:"), constraints);
 
-        assigneesSearchField = new JTextField(TEXT_FIELD_WIDTH);
+        JTextField assigneesSearchField = new JTextField(TEXT_FIELD_WIDTH);
 
         constraints.gridx = 6;
         constraints.gridy = 0;
@@ -238,12 +244,17 @@ public class CreateIssueDialog extends DialogWrapper {
         Platform platform = user.platform();
         Map<Platform, UserData> users = userExtractor.extractUsers(project, user, platform);
 
+        String milestone = null;
+        if (!getSelectedMilestone().equals(NO_MILESTONE))
+            milestone = getSelectedMilestone().trim().split(" : ")[1];
+
         if (platform == Platform.GITHUB) {
             GithubIssueRequest request = new GithubIssueRequest(
                     getTitle(),
                     getDescription(),
                     getSelectedItems(labelPanel),
-                    getSelectedItems(assigneesPanel)
+                    getSelectedItems(assigneesPanel),
+                    milestone
             );
 
             processIssueCreation(new GithubService(users.get(platform)), request, platform);
@@ -254,7 +265,8 @@ public class CreateIssueDialog extends DialogWrapper {
                     getSelectedItems(labelPanel),
                     getSelectedItems(assigneesPanel).stream().map(
                             item -> Integer.parseInt(item.trim().split(" : ")[1])
-                    ).collect(Collectors.toSet())
+                    ).collect(Collectors.toSet()),
+                    milestone
             );
 
             processIssueCreation(new GitlabService(users.get(platform)), request, platform);
@@ -304,6 +316,10 @@ public class CreateIssueDialog extends DialogWrapper {
 
     public String getSelectedAccount() {
         return (String) accountCombo.getSelectedItem();
+    }
+
+    public String getSelectedMilestone() {
+        return (String) milestoneCombo.getSelectedItem();
     }
 
     public Set<String> getSelectedItems(JPanel panel) {

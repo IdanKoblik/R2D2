@@ -1,17 +1,12 @@
 package dev.idank.r2d2.git.gitlab;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.GitService;
 import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
 import okhttp3.*;
 
-import javax.swing.*;
 import java.io.IOException;
-
-import static com.intellij.openapi.updateSettings.impl.PluginDownloader.showErrorDialog;
 
 public class GitlabService extends GitService<GitlabIssueRequest> {
 
@@ -39,7 +34,8 @@ public class GitlabService extends GitService<GitlabIssueRequest> {
     public IssueData fetchIssueData()  {
         return new IssueData(
                 fetchIssues( data.instance() + "/api/v4/projects/" + namespace + "/labels"),
-                getUsers( data.instance() + "/api/v4/projects/" + namespace + "/users?exclude_bots=true", "username")
+                fetchUsers( data.instance() + "/api/v4/projects/" + namespace + "/users?exclude_bots=true", "username"),
+                fetchMilestones( data.instance() + "/api/v4/projects/" + namespace + "/milestones", "id")
         );
     }
 

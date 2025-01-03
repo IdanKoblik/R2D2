@@ -3,6 +3,7 @@ package dev.idank.r2d2.git;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idank.r2d2.git.data.IssueData;
+import dev.idank.r2d2.git.data.Milestone;
 import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.IssueRequest;
@@ -27,7 +28,7 @@ public abstract class GitService<R extends IssueRequest> {
     public abstract Response createIssue(R request) throws IOException;
     public abstract IssueData fetchIssueData() throws IOException;
 
-    protected Set<User> getUsers(String url, String usernameProperty) {
+    protected Set<User> fetchUsers(String url, String usernameProperty) {
         Request request = new Request.Builder()
                 .url(url)
                 .header("Authorization", "Bearer " + data.token())
@@ -74,6 +75,36 @@ public abstract class GitService<R extends IssueRequest> {
             Set<String> labels = new HashSet<>();
             jsonArray.forEach(node -> labels.add(node.get("name").asText()));
             return labels;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected Set<Milestone> fetchMilestones(String url, String idProperty) {
+        Request request = new Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer " + data.token())
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.body() == null)
+                return Set.of();
+
+            String responseBody = response.body().string();
+            JsonNode jsonArray = objectMapper.readTree(responseBody);
+
+            Set<Milestone> milestones = new HashSet<>();
+            jsonArray.forEach(node ->
+                milestones.add(
+                        new Milestone(
+                                node.get(idProperty).asText(),
+                                node.get("title").asText()
+                        )
+                )
+            );
+
+            return milestones;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
