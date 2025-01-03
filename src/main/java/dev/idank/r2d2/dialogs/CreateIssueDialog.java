@@ -110,7 +110,7 @@ public class CreateIssueDialog extends DialogWrapper {
     private GridBagConstraints createConstraints() {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = JBUI.insets(5);
+        constraints.insets = JBUI.insets(6);
         return constraints;
     }
 
@@ -142,11 +142,12 @@ public class CreateIssueDialog extends DialogWrapper {
     }
 
     private void addMilestonesComponents(JPanel panel, GridBagConstraints constraints) {
-        constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
         panel.add(new JLabel("Milestones:"), constraints);
 
-        constraints.gridx = 2;
+        constraints.gridx = 1;
+        constraints.gridwidth = 2;
         panel.add(milestoneCombo, constraints);
     }
 
