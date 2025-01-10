@@ -1,0 +1,25 @@
+name: Main pipeline workflow
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Version name'
+        required: true
+        type: string
+
+permissions:
+  pull-requests: write
+  contents: write
+  repository-projects: write
+  packages: write
+  pages: write
+  id-token: write
+
+
