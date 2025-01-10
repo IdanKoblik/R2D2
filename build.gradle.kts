@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.time.LocalDate
 
 plugins {
     id("java")
@@ -7,7 +8,11 @@ plugins {
 }
 
 group = "dev.idank"
-version = "1.0-SNAPSHOT"
+version = figureVersion()
+
+fun figureVersion(): String {
+    return (if (System.getenv("VERSION") == null) "dev" else System.getenv("VERSION"))
+}
 
 repositories {
     mavenCentral()
@@ -17,8 +22,6 @@ repositories {
     }
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.2")
@@ -34,21 +37,20 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:${findProperty("okhttp.version")}"))
     implementation("com.squareup.okhttp3:okhttp")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${findProperty("jackson.version")}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${findProperty("jackson.version")}")
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
-    testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
+    testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:${findProperty("okhttp.version")}")
 }
 
 tasks {
-    // Set the JVM compatibility versions
     withType<JavaCompile> {
         sourceCompatibility = "17"
         targetCompatibility = "17"
@@ -60,17 +62,37 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("242")
-        untilBuild.set("243.*") // Supports 243.x
+        untilBuild.set("243.*")
+    }
+
+    register("license") {
+        group = "verification"
+        doLast {
+            val licenseFile = file("LICENSE.md")
+            if (!licenseFile.exists())
+                throw GradleException("LICENSE.md file is missing!")
+
+            val licenseContent = licenseFile.readText().trim()
+            val expected = "Copyright (c) ${LocalDate.now().year} Idan Koblik"
+            if (!licenseContent.contains(expected))
+                throw GradleException("License in LICENSE.md is outdated!")
+        }
+
+        outputs.upToDateWhen { false }
+    }
+
+    check {
+        dependsOn("test", "license")
     }
 
     test {
         useJUnitPlatform()
 
-        systemProperty("gitlab.user", project.findProperty("gitlab.user") ?: System.getenv("GITLAB_USER"))
-        systemProperty("gitlab.token", project.findProperty("gitlab.token") ?: System.getenv("GITLAB_AUTH"))
+        systemProperty("gitlab.user", project.findProperty("gitlab.user") ?: System.getenv("GIT_USER"))
+        systemProperty("gitlab.token", project.findProperty("gitlab.token") ?: System.getenv("GL_AUTH"))
 
-        systemProperty("github.user", project.findProperty("github.user") ?: System.getenv("GITHUB_USER"))
-        systemProperty("github.token", project.findProperty("github.token") ?: System.getenv("GITHUB_AUTH"))
+        systemProperty("github.user", project.findProperty("github.user") ?: System.getenv("GIT_USER"))
+        systemProperty("github.token", project.findProperty("github.token") ?: System.getenv("GH_AUTH"))
     }
 
     signPlugin {
