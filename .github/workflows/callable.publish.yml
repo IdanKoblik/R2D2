@@ -1,0 +1,53 @@
+name: Publish library
+
+on:
+  workflow_call:
+    inputs:
+      VERSION:
+        description: 'Version name'
+        required: true
+        type: string
+    secrets:
+      GIT_USER:
+        required: true
+      GH_AUTH:
+        required: true
+      GL_AUTH:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USER: ${{ secrets.GIT_USER }}
+          GH_AUTH: ${{ secrets.GH_AUTH }}
+          GL_AUTH: ${{ secrets.GL_AUTH }}
+          VERSION: ${{ inputs.VERSION }}
+        run: |
+          ./gradlew buildPlugin
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: IdanKoblik/Changelog@production
+        with:
+          version: ${{ inputs.VERSION }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            **/build/distributions/*

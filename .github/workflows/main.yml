@@ -44,3 +44,13 @@ jobs:
       GH_AUTH: ${{ secrets.GH_AUTH }}
       GL_AUTH: ${{ secrets.GL_AUTH }}
 
+  publish:
+    needs: run_tests
+    uses: ./.github/workflows/callable.publish.yml
+    with:
+      VERSION: ${{ github.event.inputs.name || 'dev' }}
+    secrets:
+      GIT_USER: ${{ secrets.GIT_USER }}
+      GH_AUTH: ${{ secrets.GH_AUTH }}
+      GL_AUTH: ${{ secrets.GL_AUTH }}
+
