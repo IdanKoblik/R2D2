@@ -8,11 +8,17 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.IncorrectOperationException;
+import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.dialogs.CreateIssueDialog;
+import dev.idank.r2d2.utils.UIUtils;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
 
 public class CreateIssueIntentionAction extends BaseIntentionAction {
 
@@ -39,6 +45,14 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
             return;
 
         ApplicationManager.getApplication().invokeLater(() -> {
+            if (PluginLoader.getInstance().getGitAccounts().isEmpty()) {
+                UIUtils.showError("You must have at least one git user connected to idea", new JTextField());
+                ShowSettingsUtil.getInstance().showSettingsDialog(project,
+                        VcsManagerConfigurable.APPLICATION_CONFIGURABLE.getName());
+
+                return;
+            }
+
             CreateIssueDialog dialog = new CreateIssueDialog(project, title, description, lineNum, editor.getDocument());
             dialog.showAndGet();
         });

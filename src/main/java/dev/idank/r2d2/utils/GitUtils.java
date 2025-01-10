@@ -1,30 +1,22 @@
 package dev.idank.r2d2.utils;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
-import dev.idank.r2d2.dialogs.CreateIssueDialog;
-import dev.idank.r2d2.git.GitInfo;
+import dev.idank.r2d2.git.data.GitInfo;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class GitUtils {
 
-    public static Map<String, GitInfo> extractGitInfo(String repoPath, CreateIssueDialog dialog) {
+    public static Map<String, GitInfo> extractGitInfo(String repoPath) {
         Map<String, GitInfo> namespaces = new HashMap<>();
         File configFile = new File(repoPath + "/.git/config");
 
-        if (!configFile.exists()) {
-            dialog.showError("You are not inside a git repository");
+        if (!configFile.exists())
             return namespaces;
-        }
 
         List<String> configContent = null;
         try {

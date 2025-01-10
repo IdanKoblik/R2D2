@@ -2,17 +2,17 @@ package dev.idank.r2d2.annotators;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import dev.idank.r2d2.BaseTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.List;
 
-@RunWith(JUnit4.class)
-public class TODOAnnotatorTest extends BasePlatformTestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class TODOAnnotatorTest extends BaseTest {
 
     @BeforeEach
     @Override
@@ -130,8 +130,4 @@ public class TODOAnnotatorTest extends BasePlatformTestCase {
         }
     }
 
-    @Override
-    protected String getTestDataPath() {
-        return "src/test/testData";
-    }
 }

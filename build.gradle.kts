@@ -33,6 +33,7 @@ dependencies {
 
         testFramework(TestFrameworkType.Platform)
     }
+
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     implementation("com.squareup.okhttp3:okhttp")
 
@@ -42,9 +43,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1")
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 tasks {
@@ -53,6 +53,7 @@ tasks {
         sourceCompatibility = "17"
         targetCompatibility = "17"
     }
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "17"
     }
@@ -64,6 +65,12 @@ tasks {
 
     test {
         useJUnitPlatform()
+
+        systemProperty("gitlab.user", project.findProperty("gitlab.user") ?: System.getenv("GITLAB_USER"))
+        systemProperty("gitlab.token", project.findProperty("gitlab.token") ?: System.getenv("GITLAB_AUTH"))
+
+        systemProperty("github.user", project.findProperty("github.user") ?: System.getenv("GITHUB_USER"))
+        systemProperty("github.token", project.findProperty("github.token") ?: System.getenv("GITHUB_AUTH"))
     }
 
     signPlugin {
