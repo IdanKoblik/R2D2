@@ -1,4 +1,3 @@
-/*
 package dev.idank.r2d2.utils;
 
 import dev.idank.r2d2.dialogs.CreateIssueDialog;
@@ -38,7 +37,7 @@ public class GitUtilsTest {
     public void testExtractGitInfo_ValidHttpUrl() throws IOException {
         writeConfigContent("[remote \"origin\"]\n\turl = https://github.com/user/repo.git\n");
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -51,7 +50,7 @@ public class GitUtilsTest {
     public void testExtractGitInfo_ValidSshUrl() throws IOException {
         writeConfigContent("[remote \"origin\"]\n\turl = git@github.com:user/repo.git\n");
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -64,7 +63,7 @@ public class GitUtilsTest {
     public void testExtractGitInfo_InvalidUrlFormat() throws IOException {
         writeConfigContent("[remote \"origin\"]\n\turl = ftp://github.com/user/repo.git\n");
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
 
         assertTrue(result.isEmpty());
     }
@@ -75,7 +74,7 @@ public class GitUtilsTest {
                 "[remote \"upstream\"]\n\turl = git@github.com:anotheruser/anotherrepo.git\n";
         writeConfigContent(configContent);
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -90,7 +89,7 @@ public class GitUtilsTest {
     public void testExtractGitInfo_EmptyConfigFile() throws IOException {
         writeConfigContent("");
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
         assertTrue(result.isEmpty());
     }
 
@@ -98,9 +97,8 @@ public class GitUtilsTest {
     public void testExtractGitInfo_NoRemoteUrl() throws IOException {
         writeConfigContent("[remote \"origin\"]\n");
 
-        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString(), dialog);
+        Map<String, GitInfo> result = GitUtils.extractGitInfo(tempDir.toString());
         assertTrue(result.isEmpty());
     }
 
 }
-*/

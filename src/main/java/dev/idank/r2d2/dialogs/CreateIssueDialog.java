@@ -11,15 +11,16 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
 import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
-import dev.idank.r2d2.git.*;
+import dev.idank.r2d2.git.api.GitService;
+import dev.idank.r2d2.git.GitUserExtractor;
+import dev.idank.r2d2.git.Platform;
 import dev.idank.r2d2.git.data.GitUser;
 import dev.idank.r2d2.git.data.Milestone;
-import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.UserData;
+import dev.idank.r2d2.git.api.GithubService;
+import dev.idank.r2d2.git.api.GitlabService;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
-import dev.idank.r2d2.git.github.GithubService;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
-import dev.idank.r2d2.git.gitlab.GitlabService;
 import dev.idank.r2d2.git.request.IssueRequest;
 import dev.idank.r2d2.listeners.SearchListener;
 import dev.idank.r2d2.utils.UIUtils;
@@ -75,7 +76,10 @@ public class CreateIssueDialog extends DialogWrapper {
         accounts.add(NO_USER);
         accountCombo = new JComboBox<>(accounts);
 
-        Vector<String> milestones = PluginLoader.getInstance().getIssueData().milestones().stream()
+        Vector<String> milestones = new Vector<>();
+        Set<Milestone> availableMilestones = PluginLoader.getInstance().getIssueData().milestones();
+        if (availableMilestones != null)
+            milestones = availableMilestones.stream()
                 .map(milestone -> milestone.name() + " : " + milestone.id())
                 .distinct().collect(Collectors.toCollection(Vector::new));
 
@@ -254,7 +258,9 @@ public class CreateIssueDialog extends DialogWrapper {
                     getTitle(),
                     getDescription(),
                     getSelectedItems(labelPanel),
-                    getSelectedItems(assigneesPanel),
+                    getSelectedItems(assigneesPanel).stream().map(
+                            item -> item.trim().split(" : ")[0]
+                    ).collect(Collectors.toSet()),
                     milestone
             );
 

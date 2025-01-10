@@ -8,7 +8,6 @@ import org.jetbrains.kotlin.psi.KtValueArgument;
 import java.util.Arrays;
 import java.util.List;
 
-import static dev.idank.r2d2.TodoDescriptionBuilder.TODO_KEYWORD;
 import static dev.idank.r2d2.handler.JavaTodoHandler.createTodoAnnotation;
 
 public class KotlinTodoHandler {
@@ -17,7 +16,7 @@ public class KotlinTodoHandler {
         if (!(element.getCalleeExpression() instanceof KtNameReferenceExpression nameRef))
             return;
 
-        if (!nameRef.getReferencedName().equals(TODO_KEYWORD))
+        if (!nameRef.getReferencedName().equals("TODO"))
             return;
 
         List<KtValueArgument> args = element.getValueArguments();

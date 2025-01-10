@@ -22,7 +22,9 @@ public class InvalidateCachesAction extends AnAction {
         PluginLoader pluginLoader = PluginLoader.getInstance();
         ApplicationManager.getApplication().runWriteAction(() -> {
             gitUserExtractor.invalidateCache();
-            pluginLoader.loadIssueData();
+
+            if (!ApplicationManager.getApplication().isUnitTestMode())
+                pluginLoader.loadIssueData();
         });
 
         if (!ApplicationManager.getApplication().isUnitTestMode()) {

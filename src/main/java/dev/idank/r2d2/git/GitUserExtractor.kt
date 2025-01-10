@@ -80,8 +80,7 @@ class GitUserExtractor private constructor() {
         val normalizedInstance = user.instance.normalizeUrl()
 
         accounts.firstOrNull { account ->
-            account.name == user.username &&
-                    account.server.toString().normalizeUrl() == normalizedInstance
+            account.name == user.username && account.server.toString().normalizeUrl() == normalizedInstance
         }?.let { account ->
             val token = getOrRequestToken(account, project)
             if (token != null) {

@@ -22,5 +22,9 @@ public class PlatformTest {
 
         Platform gitlab = Platform.fromName("(gitlab)");
         assertEquals(Platform.GITLAB, gitlab);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            Platform invalid = Platform.fromName("(invalid)");
+        });
     }
 }

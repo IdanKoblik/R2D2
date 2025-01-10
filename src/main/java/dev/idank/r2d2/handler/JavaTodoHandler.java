@@ -34,8 +34,6 @@ public class JavaTodoHandler {
 
     private void processTodoItem(TodoItem todo, AnnotationHolder holder) {
         String todoText = getTodoText(todo);
-        if (todoText.startsWith(TODO_KEYWORD + "("))
-            return;
 
         lineNum = context.getDocument().getLineNumber(todo.getTextRange().getStartOffset());
         String fullLine = getFullLine(lineNum);
@@ -59,18 +57,16 @@ public class JavaTodoHandler {
         String normalTodo = todoText.replaceAll("\\s+", " ");
         int firstSpaceIndex = normalTodo.indexOf(" ");
 
-        if (firstSpaceIndex == -1) {
+        if (firstSpaceIndex == -1)
             return Optional.empty();
-        }
 
         String title = normalTodo.substring(firstSpaceIndex + 1);
-        String description = "";
+        String description;
 
         TodoDescriptionBuilder builder = new TodoDescriptionBuilder(context.getDocument(), lineNum);
-
         if (fullLine.startsWith(COMMENT_PREFIX))
-            description = builder.extractNormalTodoDescription();
-        else if (isValidBlockComment(fullLine, lineNum))
+            description = builder.extractNormalTodoDescription(context.getProject(), context.getFile());
+        else if (isValidBlockComment(fullLine, lineNum, builder))
             description = builder.extractBulkTodoDescription(context.getProject(), context.getFile());
         else
             return Optional.empty();
@@ -78,11 +74,11 @@ public class JavaTodoHandler {
         return Optional.of(new TodoData(title, description));
     }
 
-    private boolean isValidBlockComment(String fullLine, int lineNum) {
+    private boolean isValidBlockComment(String fullLine, int lineNum, TodoDescriptionBuilder builder) {
         if (fullLine.startsWith(BLOCK_COMMENT_START))
             return !fullLine.startsWith(JAVADOC_START);
 
-        if (fullLine.startsWith(TODO_KEYWORD))
+        if (builder.isTodo(builder.getLineRange(fullLine), context.getProject(), context.getFile()))
             return true;
 
         if (fullLine.trim().startsWith(COMMENT_ASTERISK))

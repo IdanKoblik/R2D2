@@ -12,7 +12,6 @@ import java.util.List;
 
 public class TodoDescriptionBuilder {
 
-    public static final String TODO_KEYWORD = "TODO";
     public static final String COMMENT_PREFIX = "//";
     public static final String JAVADOC_START = "/**";
     public static final String BLOCK_COMMENT_START = "/*";
@@ -26,9 +25,9 @@ public class TodoDescriptionBuilder {
         this.startLine = startLine;
     }
 
-    public String extractNormalTodoDescription() {
+    public String extractNormalTodoDescription(Project project, PsiFile file) {
         return extractDescription(
-                line -> line.startsWith(COMMENT_PREFIX),
+                line -> line.startsWith(COMMENT_PREFIX) && !isTodo(getLineRange(line), project, file),
                 line -> line.replaceFirst("^//\\s?", "").trim()
         );
     }
@@ -62,7 +61,7 @@ public class TodoDescriptionBuilder {
         return document.getText(range);
     }
 
-    private TextRange getLineRange(String line) {
+    public TextRange getLineRange(String line) {
         int lineNum = document.getLineNumber(document.getText().indexOf(line));
         return new TextRange(
                 document.getLineStartOffset(lineNum),
@@ -70,7 +69,7 @@ public class TodoDescriptionBuilder {
         );
     }
 
-    private boolean isTodo(TextRange textRange, Project project, PsiFile file) {
+    public boolean isTodo(TextRange textRange, Project project, PsiFile file) {
         return Arrays.stream(new PsiTodoSearchHelperImpl(project).findTodoItems(file))
                 .anyMatch(todo -> todo.getTextRange().equals(textRange));
     }

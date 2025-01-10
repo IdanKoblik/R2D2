@@ -1,6 +1,5 @@
-package dev.idank.r2d2.git.github;
+package dev.idank.r2d2.git.api;
 
-import dev.idank.r2d2.git.GitService;
 import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
@@ -8,7 +7,7 @@ import okhttp3.*;
 
 import java.io.IOException;
 
-public class GithubService extends GitService<GithubIssueRequest> {
+public final class GithubService extends GitService<GithubIssueRequest> {
 
     public GithubService(UserData data) {
         super(data);
