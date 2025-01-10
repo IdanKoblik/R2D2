@@ -41,11 +41,8 @@ jobs:
         run: |
           ./gradlew buildPlugin
 
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: IdanKoblik/Changelog@prod
+      - name: Publish
+        uses: IdanKoblik/Changelog@prod
         with:
           version: ${{ inputs.VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
