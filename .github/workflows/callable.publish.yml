@@ -45,7 +45,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: IdanKoblik/Changelog@production
+      - uses: IdanKoblik/Changelog@v1
         with:
           version: ${{ inputs.VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
