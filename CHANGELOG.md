@@ -1,8 +1,5 @@
 # Changelog
 
-## Test11
-- Final test
-
 ## v1-SNAPSHOT
 First snapshot version of the plugin!
 - Supports bulk/normal todo comments
