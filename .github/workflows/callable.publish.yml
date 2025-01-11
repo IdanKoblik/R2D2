@@ -47,4 +47,4 @@ jobs:
           version: ${{ inputs.VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            **/build/distributions/*
+            **/build/distributions/r2d2-dev.zip
