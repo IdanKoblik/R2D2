@@ -44,6 +44,7 @@ jobs:
       - name: Upload
         uses: IdanKoblik/Changelog@prod
         env:
+          GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ inputs.VERSION }}
