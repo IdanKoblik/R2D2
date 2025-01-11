@@ -27,3 +27,6 @@ Since this plugin is not yet available in the JetBrains Marketplace, follow thes
 - Bulk todo
 
 > A todo description is the following line after the todo line except whitespace.
+
+## Main workflow
+![gif](https://raw.githubusercontent.com/IdanKoblik/assets/refs/heads/main/Untitled%20design.gif)
