@@ -9,4 +9,9 @@ public record GitUser(
         String url,
         Platform platform
 ) {
+
+    @Override
+    public String toString() {
+        return "%s / %s / %s [%s]".formatted(username, instance, platform, namespace);
+    }
 }

@@ -1,32 +1,29 @@
 package dev.idank.r2d2;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import dev.idank.r2d2.git.*;
-import dev.idank.r2d2.git.data.GitInfo;
-import dev.idank.r2d2.git.data.GitUser;
-import dev.idank.r2d2.git.data.IssueData;
-import dev.idank.r2d2.git.data.UserData;
-import dev.idank.r2d2.git.api.GithubService;
+import dev.idank.r2d2.git.data.*;
 import dev.idank.r2d2.git.api.GitlabService;
-import dev.idank.r2d2.utils.GitUtils;
+import dev.idank.r2d2.managers.UserManager;
+import dev.idank.r2d2.managers.GitManager;
 import org.jetbrains.annotations.TestOnly;
-import org.jetbrains.annotations.VisibleForTesting;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 
 import static dev.idank.r2d2.dialogs.CreateIssueDialog.NO_USER;
 
 public class PluginLoader {
 
     private static PluginLoader instance;
-    private IssueData issueData;
+
+    private final GitManager gitManager =  GitManager.getInstance();
+    private final Map<UserData, IssueData> issueData = new HashMap<>();
+
+    private Vector<String> users = new Vector<>();
     private Project project;
 
     public static PluginLoader getInstance() {
@@ -37,96 +34,121 @@ public class PluginLoader {
         if (this.project == null)
             return;
 
-        if (getGitAccounts().isEmpty())
-            return;
-
+        GitManager.getInstance().loadNamespaces(project);
         GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
         userExtractor.invalidateCache();
 
-        Vector<String> gitLabAccounts = getGitLabAccounts(null, null);
+        Vector<String> gitLabAccounts = getGitlabAccounts(null);
         if (!gitLabAccounts.isEmpty()) {
-            Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(gitLabAccounts.get(0)), Platform.GITLAB);
-            this.issueData = new GitlabService(users.get(Platform.GITLAB)).fetchIssueData();
+            for (String account : gitLabAccounts) {
+                Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(account), Platform.GITLAB, true);
+                UserData data = users.get(Platform.GITLAB);
+                issueData.put(data, new GitlabService(data).fetchIssueData());
+            }
+
             return;
         }
 
-        Vector<String> gitHubAccounts = getGitHubAccounts(null, null);
+        Vector<String> gitHubAccounts = getGitHubAccounts(null);
         if (!gitHubAccounts.isEmpty()) {
-            Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(gitHubAccounts.get(0)), Platform.GITHUB);
-            this.issueData = new GithubService(users.get(Platform.GITHUB)).fetchIssueData();
+            for (String account : gitHubAccounts) {
+                Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
+                UserData data = users.get(Platform.GITLAB);
+                issueData.put(data, new GitlabService(data).fetchIssueData());
+            }
+
             return;
         }
     }
 
-    public IssueData getIssueData() {
+    public Map<UserData, IssueData> getIssueData() {
         return issueData;
     }
 
     public Vector<String> getGitAccounts() {
-        return getGitAccounts(null, null, null);
+        if (users.isEmpty())
+            users = getGitAccounts(null, null);
+
+        return users;
     }
 
     @TestOnly
-    public Vector<String> getGitAccounts(GithubAccount ghAccount, GitLabAccount glAccount, String repoPath) {
+    public Vector<String> getGitAccounts(GithubAccount ghAccount, GitLabAccount glAccount) {
         Vector<String> accounts = new Vector<>();
-        Vector<String> githubAccounts = getGitHubAccounts(ghAccount, repoPath);
-        Vector<String> gitLabAccounts = getGitLabAccounts(glAccount, repoPath);
+        Vector<String> githubAccounts = getGitHubAccounts(ghAccount);
+        Vector<String> gitLabAccounts = getGitlabAccounts(glAccount);
 
         accounts.addAll(githubAccounts);
         accounts.addAll(gitLabAccounts);
         return new Vector<>(Collections.unmodifiableList(accounts));
     }
 
-    private Vector<String> getGitHubAccounts(GithubAccount account, String repoPath) {
+    private Vector<String> getGitHubAccounts(GithubAccount account) {
         Vector<String> accounts = new Vector<>();
-
         if (account == null) {
-            for (GithubAccount ghAccount : GHAccountsUtil.getAccounts()) {
-                String serverUrl = ghAccount.getServer().toString();
-                if (GitUtils.extractGitInfo(ProjectManager.getInstance().getOpenProjects()[0].getBasePath())
-                        .containsKey(serverUrl)) {
-                    accounts.add(ghAccount.getName() + " / " + ghAccount.getServer().getSchema() +"://" + ghAccount.getServer() + " / " + Platform.GITHUB.getName());
-                }
-            }
+            for (GithubAccount ghAccount : GHAccountsUtil.getAccounts())
+                constructGithubAccount(ghAccount, accounts);
 
             return accounts;
         }
 
-        String serverUrl = account.getServer().toString();
-        if (GitUtils.extractGitInfo(repoPath)
-                .containsKey(serverUrl)) {
-            accounts.add(account.getName() + " / " + account.getServer().getSchema() +"://" + account.getServer() + " / " + Platform.GITHUB.getName());
-        }
-
+        constructGithubAccount(account, accounts);
         return accounts;
     }
 
-    private Vector<String> getGitLabAccounts(GitLabAccount account, String repoPath) {
+    private void constructGithubAccount(GithubAccount githubAccount, Vector<String> accounts) {
+        String serverUrl = githubAccount.getServer().toString();
+        Optional<Set<GitInfo>> infosOpt = this.gitManager.getNamespace(serverUrl);
+        if (infosOpt.isEmpty())
+            return;
+
+        for (GitInfo info : infosOpt.get()) {
+            GitUser account = new GitUser(
+                    githubAccount.getName(),
+                    githubAccount.getServer().getSchema() + "://" + githubAccount.getServer(),
+                    info.namespace(),
+                    info.url(),
+                    Platform.GITHUB
+            );
+
+            UserManager.getInstance().addUser(account);
+            accounts.add(account.toString());
+        }
+    }
+
+    private Vector<String> getGitlabAccounts(GitLabAccount account) {
         Vector<String> accounts = new Vector<>();
         if (account == null) {
             PersistentGitLabAccountManager accountManager = new PersistentGitLabAccountManager();
-            for (GitLabAccount gitLabAccount : accountManager.getAccountsState().getValue()) {
-                String server = gitLabAccount.getServer().toString();
-                String cleanServer = server.replace("https://", "").replace("http://", "");
-
-                if (GitUtils.extractGitInfo(ProjectManager.getInstance().getOpenProjects()[0].getBasePath())
-                        .containsKey(cleanServer)) {
-                    accounts.add(gitLabAccount.getName() + " / " + server + " / " + Platform.GITLAB.getName());
-                }
-            }
+            for (GitLabAccount gitlabAccount : accountManager.getAccountsState().getValue())
+                constructGitlabAccount(gitlabAccount, accounts);
 
             return accounts;
         }
 
-        String server = account.getServer().toString();
-        String cleanServer = server.replace("https://", "").replace("http://", "");
-
-        if (GitUtils.extractGitInfo(repoPath)
-                .containsKey(cleanServer)) {
-            accounts.add(account.getName() + " / " + server + " / " + Platform.GITLAB.getName());
-        }
-
+        constructGitlabAccount(account, accounts);
         return accounts;
+    }
+
+    private void constructGitlabAccount(GitLabAccount gitlabAccount, Vector<String> accounts) {
+        String server = gitlabAccount.getServer().toString();
+        String cleanServer = server.replace("https://", "").replace("http://", "");
+        Optional<Set<GitInfo>> infosOpt = this.gitManager.getNamespace(cleanServer);
+        if (infosOpt.isEmpty())
+            return;
+
+        for (GitInfo info : infosOpt.get()) {
+            GitUser account = new GitUser(
+                    gitlabAccount.getName(),
+                    server,
+                    info.namespace(),
+                    info.url(),
+                    Platform.GITLAB
+            );
+
+            UserManager.getInstance().addUser(account);
+            accounts.add(account.toString());
+        }
     }
 
     public Project getProject() {
@@ -138,19 +160,11 @@ public class PluginLoader {
     }
 
     public GitUser createGitUser(String selectedAccount) {
-        return createGitUser(selectedAccount, ProjectManager.getInstance().getOpenProjects()[0].getBasePath());
-    }
-
-    @TestOnly
-    public GitUser createGitUser(String selectedAccount, String repoPath) {
         if (selectedAccount.equals(NO_USER))
             return null;
 
-        String[] account = selectedAccount.split(" / ");
-        GitInfo gitInfo = GitUtils.extractGitInfo(repoPath).get(
-                account[1].replace("https://", "").replace("http://", "")
-        );
-
-        return new GitUser(account[0], account[1], gitInfo.namespace(), gitInfo.url(), Platform.fromName(account[2]));
+        Optional<GitUser> userOpt = UserManager.getInstance().getUser(selectedAccount);
+        return userOpt.orElse(null);
     }
+
 }

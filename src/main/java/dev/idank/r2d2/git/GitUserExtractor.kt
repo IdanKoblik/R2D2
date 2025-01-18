@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import dev.idank.r2d2.git.data.GitUser
 import dev.idank.r2d2.git.data.UserData
+import dev.idank.r2d2.managers.UserManager
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil.accounts
@@ -47,22 +48,20 @@ class GitUserExtractor private constructor() {
     fun extractUsers(
         project: Project,
         gitUser: GitUser?,
-        platform: Platform
+        platform: Platform,
+        force: Boolean
     ): Map<Platform, UserData> = synchronized(this) {
         val currentCache = cache
-        if (currentCache != null &&
-            Duration.between(currentCache.timestamp, Instant.now()) < CACHE_DURATION) {
+        if (currentCache != null && Duration.between(currentCache.timestamp, Instant.now()) < CACHE_DURATION && !force)
             return@synchronized currentCache.users.toMap()
-        }
 
         val newUsers = EnumMap<Platform, UserData>(Platform::class.java)
-
         try {
             when {
                 gitUser != null && platform == Platform.GITHUB ->
                     extractGithubUserData(project, gitUser, newUsers)
                 gitUser != null && platform == Platform.GITLAB ->
-                    extractGitLabUserData(project, gitUser, newUsers)
+                    extractGitlabUserData(gitUser, newUsers)
             }
         } catch (e: Exception) {
             LOG.warn("Failed to extract user data for $platform", e)
@@ -84,28 +83,30 @@ class GitUserExtractor private constructor() {
         }?.let { account ->
             val token = getOrRequestToken(account, project)
             if (token != null) {
-                users[Platform.GITHUB] = UserData(
+                val data = UserData(
                     account.name,
                     token,
                     user.instance,
                     user.namespace,
                     user.url
                 )
+
+                users[Platform.GITHUB] = data
+                UserManager.getInstance().addUserData(user, data)
             }
         }
     }
 
-    private fun extractGitLabUserData(
-        project: Project,
-        gitlabUser: GitUser,
+    private fun extractGitlabUserData(
+        user: GitUser,
         users: EnumMap<Platform, UserData>
     ) {
         val accountManager = PersistentGitLabAccountManager()
-        val normalizedUserInstance = gitlabUser.instance.normalizeUrl()
+        val normalizedUserInstance = user.instance.normalizeUrl()
         val gitlabAccounts = accountManager.accountsState.value
 
         for (account in gitlabAccounts) {
-            if (account.name != gitlabUser.username ||
+            if (account.name != user.username ||
                 account.server.toString().normalizeUrl() != normalizedUserInstance) {
                 continue
             }
@@ -114,13 +115,16 @@ class GitUserExtractor private constructor() {
                 accountManager.findCredentials(account)
             }
 
-            users[Platform.GITLAB] = UserData(
-                gitlabUser.username,
+            val data = UserData(
+                user.username,
                 credentials.toString(),
-                gitlabUser.instance,
-                gitlabUser.namespace,
-                gitlabUser.url
+                user.instance,
+                user.namespace,
+                user.url
             )
+
+            users[Platform.GITLAB] = data
+            UserManager.getInstance().addUserData(user, data)
             break
         }
     }

@@ -43,5 +43,9 @@
         <annotator
                 language="kotlin"
                 implementationClass="dev.idank.r2d2.annotators.TODOAnnotator"/>
+
+        <annotator
+                language="UAST"
+                implementationClass="dev.idank.r2d2.annotators.TODOAnnotator"/>
     </extensions>
 </idea-plugin>
