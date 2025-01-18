@@ -1,3 +1,26 @@
+/*
+MIT License
+
+Copyright (c) 2025 Idan Koblik
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
 package dev.idank.r2d2;
 
 import com.intellij.openapi.project.Project;
@@ -18,12 +41,16 @@ import static dev.idank.r2d2.dialogs.CreateIssueDialog.NO_USER;
 
 public class PluginLoader {
 
+    public static final String SSH_REGEX = "git@([a-zA-Z0-9.-]+):(.*?)(\\.git)?$";
+    public static final String HTTPS_REGEX = "https://([a-zA-Z0-9.-]+)/(.+?)(\\.git)?$";
+    public static final String HTTP_REGEX = "http://([a-zA-Z0-9.-]+)/(.+?)(\\.git)?$";
+
     private static PluginLoader instance;
 
     private final GitManager gitManager =  GitManager.getInstance();
     private final Map<UserData, IssueData> issueData = new HashMap<>();
 
-    private Vector<String> users = new Vector<>();
+    private Set<String> users = new HashSet<>();
     private Project project;
 
     public static PluginLoader getInstance() {
@@ -38,26 +65,24 @@ public class PluginLoader {
         GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
         userExtractor.invalidateCache();
 
-        Vector<String> gitLabAccounts = getGitlabAccounts(null);
+        Set<String> gitLabAccounts = getGitlabAccounts(null);
         if (!gitLabAccounts.isEmpty()) {
             for (String account : gitLabAccounts) {
-                Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(account), Platform.GITLAB, true);
-                UserData data = users.get(Platform.GITLAB);
+                Map<Platform, UserData> gitlabUsers = userExtractor.extractUsers(project, createGitUser(account), Platform.GITLAB, true);
+                UserData data = gitlabUsers.get(Platform.GITLAB);
                 issueData.put(data, new GitlabService(data).fetchIssueData());
             }
 
             return;
         }
 
-        Vector<String> gitHubAccounts = getGitHubAccounts(null);
+        Set<String> gitHubAccounts = getGitHubAccounts(null);
         if (!gitHubAccounts.isEmpty()) {
             for (String account : gitHubAccounts) {
-                Map<Platform, UserData> users = userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
-                UserData data = users.get(Platform.GITLAB);
+                Map<Platform, UserData> githubUsers = userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
+                UserData data = githubUsers.get(Platform.GITLAB);
                 issueData.put(data, new GitlabService(data).fetchIssueData());
             }
-
-            return;
         }
     }
 
@@ -65,7 +90,7 @@ public class PluginLoader {
         return issueData;
     }
 
-    public Vector<String> getGitAccounts() {
+    public Set<String> getGitAccounts() {
         if (users.isEmpty())
             users = getGitAccounts(null, null);
 
@@ -73,18 +98,18 @@ public class PluginLoader {
     }
 
     @TestOnly
-    public Vector<String> getGitAccounts(GithubAccount ghAccount, GitLabAccount glAccount) {
-        Vector<String> accounts = new Vector<>();
-        Vector<String> githubAccounts = getGitHubAccounts(ghAccount);
-        Vector<String> gitLabAccounts = getGitlabAccounts(glAccount);
+    public Set<String> getGitAccounts(GithubAccount ghAccount, GitLabAccount glAccount) {
+        Set<String> accounts = new HashSet<>();
+        Set<String> githubAccounts = getGitHubAccounts(ghAccount);
+        Set<String> gitLabAccounts = getGitlabAccounts(glAccount);
 
         accounts.addAll(githubAccounts);
         accounts.addAll(gitLabAccounts);
-        return new Vector<>(Collections.unmodifiableList(accounts));
+        return Collections.unmodifiableSet(accounts);
     }
 
-    private Vector<String> getGitHubAccounts(GithubAccount account) {
-        Vector<String> accounts = new Vector<>();
+    private Set<String> getGitHubAccounts(GithubAccount account) {
+        Set<String> accounts = new HashSet<>();
         if (account == null) {
             for (GithubAccount ghAccount : GHAccountsUtil.getAccounts())
                 constructGithubAccount(ghAccount, accounts);
@@ -96,7 +121,7 @@ public class PluginLoader {
         return accounts;
     }
 
-    private void constructGithubAccount(GithubAccount githubAccount, Vector<String> accounts) {
+    private void constructGithubAccount(GithubAccount githubAccount, Set<String> accounts) {
         String serverUrl = githubAccount.getServer().toString();
         Optional<Set<GitInfo>> infosOpt = this.gitManager.getNamespace(serverUrl);
         if (infosOpt.isEmpty())
@@ -116,8 +141,8 @@ public class PluginLoader {
         }
     }
 
-    private Vector<String> getGitlabAccounts(GitLabAccount account) {
-        Vector<String> accounts = new Vector<>();
+    private Set<String> getGitlabAccounts(GitLabAccount account) {
+        Set<String> accounts = new HashSet<>();
         if (account == null) {
             PersistentGitLabAccountManager accountManager = new PersistentGitLabAccountManager();
             for (GitLabAccount gitlabAccount : accountManager.getAccountsState().getValue())
@@ -130,7 +155,7 @@ public class PluginLoader {
         return accounts;
     }
 
-    private void constructGitlabAccount(GitLabAccount gitlabAccount, Vector<String> accounts) {
+    private void constructGitlabAccount(GitLabAccount gitlabAccount, Set<String> accounts) {
         String server = gitlabAccount.getServer().toString();
         String cleanServer = server.replace("https://", "").replace("http://", "");
         Optional<Set<GitInfo>> infosOpt = this.gitManager.getNamespace(cleanServer);

@@ -1,24 +1,48 @@
+/*
+MIT License
+
+Copyright (c) 2025 Idan Koblik
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
 package dev.idank.r2d2.dialogs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.vcs.configurable.VcsManagerConfigurable;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
-import dev.idank.r2d2.git.api.GitService;
 import dev.idank.r2d2.git.Platform;
+import dev.idank.r2d2.git.api.GitService;
+import dev.idank.r2d2.git.api.GithubService;
+import dev.idank.r2d2.git.api.GitlabService;
 import dev.idank.r2d2.git.data.GitUser;
 import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.Milestone;
 import dev.idank.r2d2.git.data.UserData;
-import dev.idank.r2d2.git.api.GithubService;
-import dev.idank.r2d2.git.api.GitlabService;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
 import dev.idank.r2d2.git.request.IssueRequest;
@@ -30,7 +54,6 @@ import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.plaf.PanelUI;
 import java.awt.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,7 +100,7 @@ public class CreateIssueDialog extends DialogWrapper {
         this.panel = new JPanel(new GridBagLayout());
         this.constraints = createConstraints();
 
-        this.accounts = PluginLoader.getInstance().getGitAccounts();
+        this.accounts = new Vector<>(PluginLoader.getInstance().getGitAccounts());
         String firstUser = accounts.firstElement();
         Optional<GitUser> gitUserOpt = UserManager.getInstance().getUser(firstUser);
         if (gitUserOpt.isEmpty())
@@ -113,10 +136,10 @@ public class CreateIssueDialog extends DialogWrapper {
     }
 
     private GridBagConstraints createConstraints() {
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = JBUI.insets(6);
-        return constraints;
+        GridBagConstraints grid = new GridBagConstraints();
+        grid.fill = GridBagConstraints.HORIZONTAL;
+        grid.insets = JBUI.insets(6);
+        return grid;
     }
 
     private Component addTitleComponent(JPanel panel, GridBagConstraints constraints) {
@@ -214,7 +237,7 @@ public class CreateIssueDialog extends DialogWrapper {
         constraints.gridy = 0;
         panel.add(assigneesSearchField, constraints);
 
-        JScrollPane assigneesScrollPane = new JScrollPane(assigneesPanel);
+        JScrollPane assigneesScrollPane = new JBScrollPane(assigneesPanel);
         assigneesScrollPane.setPreferredSize(new Dimension(150, 100));
 
         constraints.gridx = 4;
@@ -246,7 +269,7 @@ public class CreateIssueDialog extends DialogWrapper {
         if (getSelectedAccount().equals(NO_USER)) {
             UIUtils.showError("You must have at least one git user connected to idea", titleField);
             ShowSettingsUtil.getInstance().showSettingsDialog(project,
-                    VcsManagerConfigurable.APPLICATION_CONFIGURABLE.getName());
+                    Configurable.APPLICATION_CONFIGURABLE.getName());
             return false;
         }
 
@@ -320,25 +343,40 @@ public class CreateIssueDialog extends DialogWrapper {
                 updateDocument(bodyString, platform);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             UIUtils.showError("An error occurred while processing the request", titleField);
         }
     }
 
-    private void updateDocument(String responseBody, Platform platform) throws Exception {
-        JsonNode jsonArray = objectMapper.readTree(responseBody);
-        int start = document.getLineStartOffset(lineNum);
-        int end = document.getLineEndOffset(lineNum);
-        String originalText = document.getText(new TextRange(start, end));
-        String url = platform == Platform.GITLAB ?
-                jsonArray.get("web_url").asText() :
-                jsonArray.get("html_url").asText();
+    private void updateDocument(String responseBody, Platform platform) {
+        try {
+            JsonNode jsonArray = objectMapper.readTree(responseBody);
+            int start = document.getLineStartOffset(lineNum);
+            int end = document.getLineEndOffset(lineNum);
+            String originalText = document.getText(new TextRange(start, end));
 
-        WriteCommandAction.runWriteCommandAction(project, () -> {
-            document.replaceString(start, end, originalText + " " + url);
-        });
+            String url = "";
+            if (platform == Platform.GITLAB) {
+                url = jsonArray.get("web_url").asText();
+                if (url == null || url.isEmpty()) {
+                    UIUtils.showError("Missing 'web_url' in response body.", titleField);
+                    return;
+                }
+            } else if (platform == Platform.GITHUB) {
+                url = jsonArray.get("html_url").asText();
+                if (url == null || url.isEmpty()) {
+                    UIUtils.showError("Missing 'html_url' in response body.", titleField);
+                    return;
+                }
+            }
+
+            String finalUrl = url;
+            WriteCommandAction.runWriteCommandAction(project, () -> document.replaceString(start, end, originalText + " " + finalUrl));
+        } catch (Exception e) {
+            UIUtils.showError("Error updating document text.\n" + e.getMessage(), titleField);
+        }
     }
 
+    @Override
     public String getTitle() {
         return titleField.getText();
     }
@@ -380,7 +418,7 @@ public class CreateIssueDialog extends DialogWrapper {
             return;
 
         this.data = data;
-        Vector<String> milestones = new Vector<>();
+        Vector<String> milestones;
         Set<Milestone> availableMilestones = data.milestones();
 
         milestones = availableMilestones.stream()

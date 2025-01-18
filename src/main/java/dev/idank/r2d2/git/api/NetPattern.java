@@ -21,9 +21,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-package dev.idank.r2d2;
+package dev.idank.r2d2.git.api;
 
-@FunctionalInterface
-public interface LineValidator {
-    boolean isValid(String line);
+import java.util.Arrays;
+
+import static dev.idank.r2d2.PluginLoader.*;
+
+public enum NetPattern {
+    SSH(SSH_REGEX),
+    HTTPS(HTTPS_REGEX),
+    HTTP(HTTP_REGEX);
+
+    private final String pattern;
+
+    NetPattern(String pattern) {
+        this.pattern = pattern;
+    }
+
+    public String getPattern() {
+        return pattern;
+    }
+
+    public static NetPattern getNetPattern(String url) {
+        return Arrays.stream(NetPattern.values())
+                .filter(type -> url.matches(type.getPattern()))
+                .findFirst()
+                .orElse(null);
+    }
 }

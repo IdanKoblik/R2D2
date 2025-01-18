@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TODOAnnotatorTest extends BaseTest {
+class TODOAnnotatorTest extends BaseTest {
 
     @BeforeEach
     @Override
@@ -27,7 +27,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testNormalCommentSingleLine() {
+    void testNormalCommentSingleLine() {
         myFixture.configureByFile("NormalCommentSingleLine.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
         
@@ -40,7 +40,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testMultiLineNormalComment() {
+    void testMultiLineNormalComment() {
         myFixture.configureByFile("MultiLineNormalComment.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 
@@ -53,7 +53,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testBlockCommentSingleLine() {
+    void testBlockCommentSingleLine() {
         myFixture.configureByFile("BlockCommentSingleLine.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 
@@ -66,7 +66,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testBlockCommentMultiLine() {
+    void testBlockCommentMultiLine() {
         myFixture.configureByFile("BlockCommentMultiLine.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 
@@ -79,7 +79,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testJavadocCommentNotCounted() {
+    void testJavadocCommentNotCounted() {
         myFixture.configureByFile("JavadocComment.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 
@@ -91,7 +91,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testMultipleTodos() {
+    void testMultipleTodos() {
         myFixture.configureByFile("MultipleTodos.java");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 
@@ -111,7 +111,7 @@ public class TODOAnnotatorTest extends BaseTest {
     }
 
     @Test
-    public void testKotlinTodoParameters() {
+    void testKotlinTodoParameters() {
         myFixture.configureByFile("KotlinTodoParameters.kt");
         List<HighlightInfo> highlights = myFixture.doHighlighting();
 

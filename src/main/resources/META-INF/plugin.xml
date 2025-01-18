@@ -6,6 +6,9 @@
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
     <name>R2D2</name>
+    <description><![CDATA[
+    R2D2 is an IntelliJ-based plugin that not only helps manage TODO comments but also integrates with platforms like GitLab and GitHub to automatically create issues directly from your code. With minimal setup—only requiring a connected GitLab or GitHub account—the plugin streamlines the process by detecting TODO comments within your code files. When a TODO is identified, R2D2 suggests creating an issue through an intuitive dialog inside IntelliJ, eliminating the need for the user to manually input any additional data. This automated process helps ensure that tasks are efficiently tracked, linked to the appropriate repository, and seamlessly integrated into the development workflow, improving team collaboration and productivity.
+  ]]></description>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
     <vendor email="root@idank.dev" url="https://idank.dev">Idan Koblik</vendor>

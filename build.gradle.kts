@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2024.2")
+        intellijIdeaCommunity(findProperty("idea.c.version").toString())
 
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
@@ -46,7 +46,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:${findProperty("junit.version")}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${findProperty("okhttp.version")}")
 }
 
@@ -76,6 +76,16 @@ tasks {
             val expected = "Copyright (c) ${LocalDate.now().year} Idan Koblik"
             if (!licenseContent.contains(expected))
                 throw GradleException("License in LICENSE.md is outdated!")
+
+            val srcDir = file("src")
+            srcDir.walkTopDown().forEach { file ->
+                if (file.isFile and (file.endsWith(".java") or file.endsWith("kt"))) {
+                    val content = file.readText().trim()
+
+                    if (!content.contains(licenseContent))
+                        throw GradleException("File ${file.path} does not contain the required MIT license at the top!")
+                }
+            }
         }
 
         outputs.upToDateWhen { false }
