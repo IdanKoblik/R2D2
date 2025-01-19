@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package dev.idank.r2d2;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.GitUserExtractor;
 import dev.idank.r2d2.git.Platform;
@@ -205,4 +206,14 @@ public class PluginLoader {
         return userOpt.orElse(null);
     }
 
+    public void restart(Project project) {
+        GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
+        ApplicationManager.getApplication().runWriteAction(() -> {
+            setProject(project);
+            gitUserExtractor.invalidateCache();
+
+            if (!ApplicationManager.getApplication().isUnitTestMode())
+                instance.loadIssueData();
+        });
+    }
 }
