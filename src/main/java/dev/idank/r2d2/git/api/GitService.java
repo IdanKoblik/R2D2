@@ -1,3 +1,26 @@
+/*
+MIT License
+
+Copyright (c) 2025 Idan Koblik
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
 package dev.idank.r2d2.git.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,7 +38,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public sealed abstract class GitService<R extends IssueRequest> permits GithubService, GitlabService {
+public abstract sealed class GitService<R extends IssueRequest> permits GithubService, GitlabService {
 
     protected final ObjectMapper objectMapper = new ObjectMapper();
     protected final OkHttpClient client = new OkHttpClient();
@@ -37,11 +60,8 @@ public sealed abstract class GitService<R extends IssueRequest> permits GithubSe
         Set<User> users = new HashSet<>();
         for (JsonNode node : jsonArray) {
             JsonNode username = node.get(usernameProperty);
-            if (username == null)
-                continue;
-
             JsonNode id = node.get("id");
-            if (id == null)
+            if (username == null || id == null)
                 continue;
 
             users.add(
@@ -79,11 +99,8 @@ public sealed abstract class GitService<R extends IssueRequest> permits GithubSe
         Set<Milestone> milestones = new HashSet<>();
         for (JsonNode node : jsonArray) {
             JsonNode id = node.get(idProperty);
-            if (id == null)
-                continue;
-
             JsonNode title = node.get("title");
-            if (title == null)
+            if (id == null || title == null)
                 continue;
 
             milestones.add(
@@ -111,7 +128,7 @@ public sealed abstract class GitService<R extends IssueRequest> permits GithubSe
             String responseBody = response.body().string();
             return objectMapper.readTree(responseBody);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Request failed due to an I/O error", e);
         }
     }
 }

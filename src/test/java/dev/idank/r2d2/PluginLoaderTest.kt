@@ -60,7 +60,7 @@ class PluginLoaderTest : BaseTest() {
         )
 
         assertEquals(1, accounts.size)
-        assertEquals("tester-GH / https://github.com / GITHUB [tester/repo]", accounts[0].toString())
+        assertEquals("tester-GH / https://github.com / GITHUB [tester/repo]", accounts.first().toString())
     }
 
     @Test
@@ -74,7 +74,7 @@ class PluginLoaderTest : BaseTest() {
         )
 
         assertEquals(1, accounts.size)
-        assertEquals("tester-GL / https://gitlab.com / GITLAB [tester/repo]", accounts[0].toString())
+        assertEquals("tester-GL / https://gitlab.com / GITLAB [tester/repo]", accounts.first().toString())
     }
 
     @Test
