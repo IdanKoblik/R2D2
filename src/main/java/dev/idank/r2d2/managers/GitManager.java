@@ -29,7 +29,6 @@ import dev.idank.r2d2.git.data.GitInfo;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
-import git4idea.repo.GitSubmoduleInfo;
 
 import java.util.*;
 
@@ -50,9 +49,6 @@ public class GitManager {
         for (GitRepository repository : repositories) {
             for (GitRemote remote : repository.getInfo().getRemotes())
                 remote.getUrls().forEach(this::addNamespace);
-
-            for (GitSubmoduleInfo info : repository.getSubmodules())
-                addNamespace(info.getUrl());
         }
     }
 

@@ -26,7 +26,10 @@ package dev.idank.r2d2.git.api;
 import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import java.io.IOException;
 
@@ -54,7 +57,7 @@ public final class GithubService extends GitService<GithubIssueRequest> {
         return new IssueData(
                 fetchIssues("%s/repos/%s/labels".formatted(resolveInstance(), data.namespace())),
                 fetchUsers("%s/repos/%s/assignees".formatted(resolveInstance(), data.namespace()), "login"),
-                fetchMilestones("%s/repos/%s/milestones".formatted(resolveInstance(), data.namespace()), "number")
+                fetchMilestones("%s/repos/%s/milestones".formatted(resolveInstance(), data.namespace()), "number", "open")
         );
     }
 

@@ -24,11 +24,15 @@ SOFTWARE.
 package dev.idank.r2d2;
 
 import com.intellij.openapi.project.Project;
-import dev.idank.r2d2.git.*;
-import dev.idank.r2d2.git.data.*;
+import dev.idank.r2d2.git.GitUserExtractor;
+import dev.idank.r2d2.git.Platform;
 import dev.idank.r2d2.git.api.GitlabService;
-import dev.idank.r2d2.managers.UserManager;
+import dev.idank.r2d2.git.data.GitInfo;
+import dev.idank.r2d2.git.data.GitUser;
+import dev.idank.r2d2.git.data.IssueData;
+import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.managers.GitManager;
+import dev.idank.r2d2.managers.UserManager;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
@@ -61,10 +65,15 @@ public class PluginLoader {
         if (this.project == null)
             return;
 
-        GitManager.getInstance().loadNamespaces(project);
         GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
         userExtractor.invalidateCache();
 
+        this.issueData.clear();
+        this.users.clear();
+        GitManager.getInstance().clear();
+        UserManager.getInstance().clear();
+
+        GitManager.getInstance().loadNamespaces(project);
         Set<String> gitLabAccounts = getGitlabAccounts(null);
         if (!gitLabAccounts.isEmpty()) {
             for (String account : gitLabAccounts) {
@@ -92,20 +101,24 @@ public class PluginLoader {
 
     public Set<String> getGitAccounts() {
         if (users.isEmpty())
-            users = getGitAccounts(null, null);
+            this.users = getGitAccounts(null, null);
 
-        return users;
+        return Collections.unmodifiableSet(this.users);
     }
 
     @TestOnly
     public Set<String> getGitAccounts(GithubAccount ghAccount, GitLabAccount glAccount) {
+        return Collections.unmodifiableSet(getGitAccountsHelper(ghAccount, glAccount));
+    }
+
+    private Set<String> getGitAccountsHelper(GithubAccount ghAccount, GitLabAccount glAccount) {
         Set<String> accounts = new HashSet<>();
         Set<String> githubAccounts = getGitHubAccounts(ghAccount);
         Set<String> gitLabAccounts = getGitlabAccounts(glAccount);
 
         accounts.addAll(githubAccounts);
         accounts.addAll(gitLabAccounts);
-        return Collections.unmodifiableSet(accounts);
+        return accounts;
     }
 
     private Set<String> getGitHubAccounts(GithubAccount account) {
