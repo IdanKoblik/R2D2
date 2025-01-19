@@ -23,10 +23,10 @@ SOFTWARE.
  */
 package dev.idank.r2d2;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.GitUserExtractor;
 import dev.idank.r2d2.git.Platform;
+import dev.idank.r2d2.git.api.GithubService;
 import dev.idank.r2d2.git.api.GitlabService;
 import dev.idank.r2d2.git.data.GitInfo;
 import dev.idank.r2d2.git.data.GitUser;
@@ -90,8 +90,8 @@ public class PluginLoader {
         if (!gitHubAccounts.isEmpty()) {
             for (String account : gitHubAccounts) {
                 Map<Platform, UserData> githubUsers = userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
-                UserData data = githubUsers.get(Platform.GITLAB);
-                issueData.put(data, new GitlabService(data).fetchIssueData());
+                UserData data = githubUsers.get(Platform.GITHUB);
+                issueData.put(data, new GithubService(data).fetchIssueData());
             }
         }
     }
@@ -102,7 +102,7 @@ public class PluginLoader {
 
     public Set<String> getGitAccounts() {
         if (users.isEmpty())
-            this.users = getGitAccounts(null, null);
+            this.users = getGitAccountsHelper(null, null);
 
         return Collections.unmodifiableSet(this.users);
     }
@@ -204,16 +204,5 @@ public class PluginLoader {
 
         Optional<GitUser> userOpt = UserManager.getInstance().getUser(selectedAccount);
         return userOpt.orElse(null);
-    }
-
-    public void restart(Project project) {
-        GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
-        ApplicationManager.getApplication().runWriteAction(() -> {
-            setProject(project);
-            gitUserExtractor.invalidateCache();
-
-            if (!ApplicationManager.getApplication().isUnitTestMode())
-                instance.loadIssueData();
-        });
     }
 }
