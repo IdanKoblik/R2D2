@@ -25,7 +25,6 @@ package dev.idank.r2d2.managers;
 
 import dev.idank.r2d2.git.data.GitUser;
 import dev.idank.r2d2.git.data.UserData;
-import org.jetbrains.annotations.Contract;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,5 +55,10 @@ public class UserManager {
 
     public Optional<GitUser> getUser(String str) {
         return Optional.ofNullable(this.users.get(str));
+    }
+
+    public void clear() {
+        this.users.clear();
+        this.usersData.clear();
     }
 }

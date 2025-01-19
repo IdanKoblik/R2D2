@@ -26,7 +26,10 @@ package dev.idank.r2d2.git.api;
 import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import java.io.IOException;
 
@@ -61,7 +64,7 @@ public final class GitlabService extends GitService<GitlabIssueRequest> {
         return new IssueData(
                 fetchIssues( baseURL + "/labels"),
                 fetchUsers( baseURL + "/users?exclude_bots=true", "username"),
-                fetchMilestones(baseURL + "/milestones", "id")
+                fetchMilestones(baseURL + "/milestones", "id", "active")
         );
     }
 

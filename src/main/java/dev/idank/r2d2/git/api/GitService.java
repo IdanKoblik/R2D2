@@ -91,7 +91,7 @@ public abstract sealed class GitService<R extends IssueRequest> permits GithubSe
         return labels;
     }
 
-    protected Set<Milestone> fetchMilestones(String url, String idProperty) {
+    protected Set<Milestone> fetchMilestones(String url, String idProperty, String validState) {
         JsonNode jsonArray = createGetRequest(url);
         if (jsonArray == null)
             return Set.of();
@@ -100,7 +100,11 @@ public abstract sealed class GitService<R extends IssueRequest> permits GithubSe
         for (JsonNode node : jsonArray) {
             JsonNode id = node.get(idProperty);
             JsonNode title = node.get("title");
-            if (id == null || title == null)
+            JsonNode state = node.get("state");
+            if (id == null || title == null || state == null)
+                continue;
+
+            if (!state.asText().equals(validState))
                 continue;
 
             milestones.add(

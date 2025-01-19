@@ -29,7 +29,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.GitUserExtractor;
-import dev.idank.r2d2.managers.GitManager;
 import org.jetbrains.annotations.NotNull;
 
 public class InvalidateCachesAction extends AnAction {
@@ -37,12 +36,13 @@ public class InvalidateCachesAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
-        PluginLoader pluginLoader = PluginLoader.getInstance();
+        PluginLoader instance = PluginLoader.getInstance();
         ApplicationManager.getApplication().runWriteAction(() -> {
+            instance.setProject(event.getProject());
             gitUserExtractor.invalidateCache();
 
             if (!ApplicationManager.getApplication().isUnitTestMode())
-                pluginLoader.loadIssueData();
+                instance.loadIssueData();
         });
 
         if (!ApplicationManager.getApplication().isUnitTestMode()) {

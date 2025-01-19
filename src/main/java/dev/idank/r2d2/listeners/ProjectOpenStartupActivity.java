@@ -23,12 +23,10 @@ SOFTWARE.
  */
 package dev.idank.r2d2.listeners;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
-import dev.idank.r2d2.PluginLoader;
-import dev.idank.r2d2.git.GitUserExtractor;
-import dev.idank.r2d2.managers.GitManager;
+import com.intellij.util.messages.MessageBusConnection;
+import git4idea.repo.GitRepository;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import org.jetbrains.annotations.NotNull;
@@ -38,19 +36,9 @@ public class ProjectOpenStartupActivity implements ProjectActivity {
 
     @Override
     public @Nullable Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
-        GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
-        PluginLoader instance = PluginLoader.getInstance();
-        GitManager gitManager = GitManager.getInstance();
-        gitManager.clear();
+        MessageBusConnection connection = project.getMessageBus().connect();
+        connection.subscribe(GitRepository.GIT_REPO_CHANGE, new GitListener());
 
-        ApplicationManager.getApplication().runWriteAction(() -> {
-            instance.setProject(project);
-            gitUserExtractor.invalidateCache();
-
-            if (!ApplicationManager.getApplication().isUnitTestMode())
-                instance.loadIssueData();
-        });
-
-        return instance.getIssueData();
+        return connection;
     }
 }

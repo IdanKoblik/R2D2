@@ -87,7 +87,7 @@ public class CreateIssueDialog extends DialogWrapper {
 
     private IssueData data = null;
     private final JPanel panel;
-    private GridBagConstraints constraints;
+    private GridBagConstraints gbc;
 
     public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
@@ -98,7 +98,7 @@ public class CreateIssueDialog extends DialogWrapper {
         this.description = description;
 
         this.panel = new JPanel(new GridBagLayout());
-        this.constraints = createConstraints();
+        this.gbc = new GridBagConstraints();
 
         this.accounts = new Vector<>(PluginLoader.getInstance().getGitAccounts());
         String firstUser = accounts.firstElement();
@@ -121,137 +121,137 @@ public class CreateIssueDialog extends DialogWrapper {
 
     @Override
     protected JComponent createCenterPanel() {
-        this.constraints = createConstraints();
-        this.components.clear();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = JBUI.insets(5);
+        gbc.weightx = 1.0;
 
-        this.components.add(addTitleComponent(panel, constraints));
-        this.components.add(addDescriptionComponent(panel, constraints));
-        this.components.add(addGitComponent(panel, constraints));
-        this.components.add(addLabelComponent(panel, constraints));
-        this.components.add(addAssigneesComponent(panel, constraints));
-        this.components.add(addMilestonesComponent(panel, constraints));
+        JPanel leftPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints leftGbc = new GridBagConstraints();
+        leftGbc.fill = GridBagConstraints.BOTH;
+        leftGbc.insets = JBUI.insets(5);
+        leftGbc.weightx = 1.0;
 
-        panel.setPreferredSize(panel.getPreferredSize());
-        return panel;
-    }
+        leftGbc.gridx = 0;
+        leftGbc.gridy = 0;
+        leftGbc.gridwidth = 1;
+        leftGbc.weighty = 0;
+        leftPanel.add(new JLabel("Issue Title:"), leftGbc);
 
-    private GridBagConstraints createConstraints() {
-        GridBagConstraints grid = new GridBagConstraints();
-        grid.fill = GridBagConstraints.HORIZONTAL;
-        grid.insets = JBUI.insets(6);
-        return grid;
-    }
-
-    private Component addTitleComponent(JPanel panel, GridBagConstraints constraints) {
+        leftGbc.gridx = 1;
+        leftGbc.weightx = 1.0;
         titleField = new JTextField(TEXT_FIELD_WIDTH);
         titleField.setText(title);
+        leftPanel.add(titleField, leftGbc);
 
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        panel.add(new JLabel("Issue Title:"), constraints);
+        leftGbc.gridx = 0;
+        leftGbc.gridy = 1;
+        leftGbc.weighty = 0;
+        leftGbc.weightx = 0;
+        leftPanel.add(new JLabel("Description:"), leftGbc);
 
-        constraints.gridx = 1;
-        panel.add(titleField, constraints);
-
-        return titleField;
-    }
-
-    private Component addDescriptionComponent(JPanel panel, GridBagConstraints constraints) {
+        leftGbc.gridx = 1;
+        leftGbc.weightx = 1.0;
+        leftGbc.weighty = 1.0;
         descriptionArea = new JTextArea(TEXT_AREA_HEIGHT, TEXT_FIELD_WIDTH);
-        descriptionArea.setText(description);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
+        descriptionArea.setText(description);
+        JBScrollPane descScrollPane = new JBScrollPane(descriptionArea);
+        leftPanel.add(descScrollPane, leftGbc);
 
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        panel.add(new JLabel("Description:"), constraints);
+        leftGbc.gridx = 0;
+        leftGbc.gridy = 2;
+        leftGbc.weighty = 0;
+        leftGbc.weightx = 0;
+        leftPanel.add(new JLabel("Git Account:"), leftGbc);
 
-        constraints.gridx = 1;
-        panel.add(new JScrollPane(descriptionArea), constraints);
-
-        return descriptionArea;
-    }
-
-    private Component addGitComponent(JPanel panel, GridBagConstraints constraints) {
+        leftGbc.gridx = 1;
+        leftGbc.weightx = 1.0;
         accountCombo = new JComboBox<>(accounts);
         accountCombo.addActionListener(new AccountComboListener(this));
+        leftPanel.add(accountCombo, leftGbc);
 
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        panel.add(new JLabel("Git Account:"), constraints);
+        leftGbc.gridx = 0;
+        leftGbc.gridy = 3;
+        leftGbc.weightx = 0;
+        leftPanel.add(new JLabel("Milestones:"), leftGbc);
 
-        constraints.gridx = 1;
-        panel.add(accountCombo, constraints);
+        leftGbc.gridx = 1;
+        leftGbc.weightx = 1.0;
+        leftPanel.add(milestoneCombo, leftGbc);
 
-        return accountCombo;
-    }
+        JPanel rightPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints rightGbc = new GridBagConstraints();
+        rightGbc.fill = GridBagConstraints.BOTH;
+        rightGbc.insets = JBUI.insets(5);
 
-    private Component addMilestonesComponent(JPanel panel, GridBagConstraints constraints) {
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        panel.add(new JLabel("Milestones:"), constraints);
+        rightGbc.gridx = 0;
+        rightGbc.gridy = 0;
+        rightGbc.gridwidth = 1;
+        rightGbc.weightx = 0;
+        rightPanel.add(new JLabel("Labels:"), rightGbc);
 
-        constraints.gridx = 1;
-        constraints.gridwidth = 2;
-        panel.add(milestoneCombo, constraints);
-
-        return milestoneCombo;
-    }
-
-    private Component addLabelComponent(JPanel panel, GridBagConstraints constraints) {
-        constraints.gridx = 2;
-        constraints.gridy = 0;
-        panel.add(new JLabel("Labels:"), constraints);
-
+        rightGbc.gridx = 1;
+        rightGbc.weightx = 1.0;
         JTextField labelSearchField = new JTextField(TEXT_FIELD_WIDTH);
+        rightPanel.add(labelSearchField, rightGbc);
 
-        constraints.gridx = 3;
-        constraints.gridy = 0;
-        panel.add(labelSearchField, constraints);
+        rightGbc.gridx = 0;
+        rightGbc.gridy = 1;
+        rightGbc.gridwidth = 2;
+        rightGbc.weighty = 1.0;
+        JScrollPane labelScrollPane = new JBScrollPane(labelPanel);
+        labelScrollPane.setPreferredSize(new Dimension(200, 150));
+        rightPanel.add(labelScrollPane, rightGbc);
 
-        JScrollPane labelScrollPane = new JScrollPane(labelPanel);
-        labelScrollPane.setPreferredSize(new Dimension(150, 100));
+        rightGbc.gridx = 0;
+        rightGbc.gridy = 2;
+        rightGbc.gridwidth = 1;
+        rightGbc.weighty = 0;
+        rightGbc.weightx = 0;
+        rightPanel.add(new JLabel("Assignees:"), rightGbc);
 
-        constraints.gridx = 2;
-        constraints.gridy = 1;
-        constraints.gridwidth = 2;
-        panel.add(labelScrollPane, constraints);
-
-        Vector<String> users = data.labels().stream()
-                .distinct().collect(Collectors.toCollection(Vector::new));
-
-        SearchListener searchListener = new SearchListener(labelPanel, labelSearchField, users);
-        searchListener.updatePanel(users);
-
-        return labelScrollPane;
-    }
-
-    private Component addAssigneesComponent(JPanel panel, GridBagConstraints constraints) {
-        constraints.gridx = 4;
-        constraints.gridy = 0;
-        panel.add(new JLabel("Assignees:"), constraints);
-
+        rightGbc.gridx = 1;
+        rightGbc.weightx = 1.0;
         JTextField assigneesSearchField = new JTextField(TEXT_FIELD_WIDTH);
+        rightPanel.add(assigneesSearchField, rightGbc);
 
-        constraints.gridx = 6;
-        constraints.gridy = 0;
-        panel.add(assigneesSearchField, constraints);
-
+        rightGbc.gridx = 0;
+        rightGbc.gridy = 3;
+        rightGbc.gridwidth = 2;
+        rightGbc.weighty = 1.0;
         JScrollPane assigneesScrollPane = new JBScrollPane(assigneesPanel);
-        assigneesScrollPane.setPreferredSize(new Dimension(150, 100));
+        assigneesScrollPane.setPreferredSize(new Dimension(200, 150));
+        rightPanel.add(assigneesScrollPane, rightGbc);
 
-        constraints.gridx = 4;
-        constraints.gridy = 1;
-        constraints.gridwidth = 4;
-        panel.add(assigneesScrollPane, constraints);
+        Vector<String> labelItems = data.labels().stream()
+                .distinct()
+                .collect(Collectors.toCollection(Vector::new));
+        new SearchListener(labelPanel, labelSearchField, labelItems).updatePanel(labelItems);
 
-        Vector<String> users = data.users().stream().map(user -> user.username() + " : " + user.id())
-                .distinct().collect(Collectors.toCollection(Vector::new));
+        Vector<String> userItems = data.users().stream()
+                .map(user -> user.username() + " : " + user.id())
+                .distinct()
+                .collect(Collectors.toCollection(Vector::new));
+        new SearchListener(assigneesPanel, assigneesSearchField, userItems).updatePanel(userItems);
 
-        SearchListener searchListener = new SearchListener(assigneesPanel, assigneesSearchField, users);
-        searchListener.updatePanel(users);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
+        gbc.weighty = 1.0;
+        panel.add(leftPanel, gbc);
 
-        return assigneesScrollPane;
+        gbc.gridx = 1;
+        gbc.weightx = 0.5;
+        panel.add(rightPanel, gbc);
+
+        components.clear();
+        components.addAll(Arrays.asList(titleField, descriptionArea, accountCombo, milestoneCombo,
+                labelPanel, assigneesPanel, labelScrollPane, assigneesScrollPane));
+
+        panel.setMinimumSize(new Dimension(800, 600));
+
+        return panel;
     }
 
     @Override
@@ -339,9 +339,8 @@ public class CreateIssueDialog extends DialogWrapper {
             String bodyString = response.body() != null ? response.body().string() : "";
             UIUtils.showSuccess("Successfully created an issue", titleField);
 
-            if (lineNum >= 0) {
+            if (lineNum >= 0)
                 updateDocument(bodyString, platform);
-            }
         } catch (Exception e) {
             UIUtils.showError("An error occurred while processing the request", titleField);
         }
