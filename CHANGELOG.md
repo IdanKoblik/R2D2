@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.2-SNAPSHOT
+- Fix GitHub rest api support
+
 ## v2.1-SNAPSHOT
 - Add optimization to user data fetching
 - Fix a bug where data between projects were colliding
