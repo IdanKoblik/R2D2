@@ -1,6 +1,7 @@
 package dev.idank.r2d2.listeners
 
 import dev.idank.r2d2.BaseTest
+import dev.idank.r2d2.PluginLoader
 import dev.idank.r2d2.git.GitUserExtractor
 import dev.idank.r2d2.git.Platform
 import dev.idank.r2d2.git.data.GitInfo
@@ -17,6 +18,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 class GitListenerTest : BaseTest() {
 
@@ -29,21 +33,23 @@ class GitListenerTest : BaseTest() {
         val dummy = GitUtils.createDummyRepo(myFixture.project)
         file = dummy.file
         repo = dummy.repo
+
+        PluginLoader.getInstance().clearCache()
     }
 
     @AfterEach
     override fun tearDown() {
         super.tearDown()
 
-        if (file.exists())
-            deleteRecursively(file)
-    }
+        if (file.exists()) {
+            val directory: Path = Paths.get(file.path)
+            Files.walk(directory)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete)
+        }
 
-    private fun deleteRecursively(file: File) {
-        if (file.isDirectory)
-            file.listFiles()?.forEach { deleteRecursively(it) }
-
-        file.delete()
+        PluginLoader.getInstance().clearCache()
     }
 
     @Test

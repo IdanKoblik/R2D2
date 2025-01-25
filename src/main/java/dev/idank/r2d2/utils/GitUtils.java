@@ -8,58 +8,65 @@ import git4idea.repo.GitRepositoryImpl;
 import org.jetbrains.annotations.TestOnly;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
 public class GitUtils {
 
+    private static final String HEAD_FILE_NAME = "HEAD";
+    private static final String GIT_DIRECTORY_NAME = ".git";
+    private static final String MASTER_REF = "ref: refs/heads/master";
+    private static final String TEST_REMOTE_NAME = "test";
+    private static final List<String> TEST_GITLAB_URLS = List.of("https://gitlab.com/tester/repo.git");
+    private static final List<String> TEST_GITHUB_URLS = List.of("https://github.com/tester/repo.git");
+
     @TestOnly
     public static Repo createDummyRepo(Project project) {
-        File git = new File(UUID.randomUUID() + "/" + project.getBasePath() + "/.git");
-        git.mkdirs();
+        Path gitPath = createGitDirectory(project);
+        createHeadFile(gitPath);
 
-        String headFilePath = git.getPath() + "/HEAD";
-        File headFile = new File(headFilePath);
+        GitRepository repo = createGitRepository(project, gitPath);
+        addRemotes(repo);
 
-        headFile.getParentFile().mkdirs();
+        return new Repo(repo, gitPath.toFile());
+    }
 
-        try (FileWriter writer = new FileWriter(headFile)) {
-            writer.write("ref: refs/heads/master");
+    private static Path createGitDirectory(Project project) {
+        Path gitPath = Paths.get(UUID.randomUUID().toString(), project.getBasePath(), GIT_DIRECTORY_NAME);
+        try {
+            Files.createDirectories(gitPath);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to create .git directory", e);
         }
+        return gitPath;
+    }
 
-        GitRepository repo = GitRepositoryImpl.createInstance(
+    private static void createHeadFile(Path gitPath) {
+        Path headFilePath = gitPath.resolve(HEAD_FILE_NAME);
+        try {
+            Files.createDirectories(headFilePath.getParent());
+            Files.writeString(headFilePath, MASTER_REF);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create HEAD file", e);
+        }
+    }
+
+    private static GitRepository createGitRepository(Project project, Path gitPath) {
+        return GitRepositoryImpl.createInstance(
                 project.getBaseDir(),
-                LocalFileSystem.getInstance().findFileByIoFile(git),
-                project
-                , () -> {}
+                LocalFileSystem.getInstance().findFileByIoFile(gitPath.toFile()),
+                project,
+                () -> {}
         );
+    }
 
-        repo.getRemotes()
-                .add(new GitRemote(
-                        "test",
-                        List.of("https://gitlab.com/tester/repo.git"),
-                        List.of("https://gitlab.com/tester/repo.git"),
-                        List.of("https://gitlab.com/tester/repo.git"),
-                        List.of("https://gitlab.com/tester/repo.git")
-                ));
-
-        repo.getRemotes()
-                .add(new GitRemote(
-                        "test",
-                        List.of("https://github.com/tester/repo.git"),
-                        List.of("https://github.com/tester/repo.git"),
-                        List.of("https://github.com/tester/repo.git"),
-                        List.of("https://github.com/tester/repo.git")
-                ));
-
-        return new Repo(
-                repo,
-                git
-        );
+    private static void addRemotes(GitRepository repo) {
+        repo.getRemotes().add(new GitRemote(TEST_REMOTE_NAME, TEST_GITLAB_URLS, TEST_GITLAB_URLS, TEST_GITLAB_URLS, TEST_GITLAB_URLS));
+        repo.getRemotes().add(new GitRemote(TEST_REMOTE_NAME, TEST_GITHUB_URLS, TEST_GITHUB_URLS, TEST_GITHUB_URLS, TEST_GITHUB_URLS));
     }
 
     public record Repo(

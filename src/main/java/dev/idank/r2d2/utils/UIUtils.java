@@ -36,9 +36,11 @@ public class UIUtils {
         }
     }
 
+
     public static void showError(String message, Component parent) {
         handle(() -> JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE));
     }
+
 
     public static void showSuccess(String message, Component parent) {
         handle(() -> JOptionPane.showMessageDialog(parent, message, "Success", JOptionPane.INFORMATION_MESSAGE));

@@ -65,6 +65,9 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
             return;
 
         ApplicationManager.getApplication().invokeLater(() -> {
+            if (ApplicationManager.getApplication().isUnitTestMode())
+                return;
+
             if (PluginLoader.getInstance().getGitAccounts().isEmpty()) {
                 UIUtils.showError("You must have at least one git user connected to idea", new JTextField());
                 ShowSettingsUtil.getInstance().showSettingsDialog(project,

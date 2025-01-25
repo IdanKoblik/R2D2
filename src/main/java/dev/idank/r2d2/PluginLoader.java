@@ -66,12 +66,7 @@ public class PluginLoader {
     @TestOnly
     public void loadIssueData(Project project, GitRepository repo) {
         GitUserExtractor userExtractor = GitUserExtractor.INSTANCE;
-        userExtractor.invalidateCache();
-
-        this.issueData.clear();
-        this.users.clear();
-        GitManager.getInstance().clear();
-        UserManager.getInstance().clear();
+        clearCache();
 
         if (ApplicationManager.getApplication().isUnitTestMode() && repo != null) {
             GitManager.getInstance().loadNamespaces(repo);
@@ -99,6 +94,7 @@ public class PluginLoader {
             }
         }
     }
+
 
     public void loadIssueData(Project project) {
         loadIssueData(project, null);
@@ -204,5 +200,14 @@ public class PluginLoader {
 
         Optional<GitUser> userOpt = UserManager.getInstance().getUser(selectedAccount);
         return userOpt.orElse(null);
+    }
+
+    public void clearCache() {
+        GitUserExtractor.INSTANCE.invalidateCache();
+
+        this.issueData.clear();
+        this.users.clear();
+        GitManager.getInstance().clear();
+        UserManager.getInstance().clear();
     }
 }

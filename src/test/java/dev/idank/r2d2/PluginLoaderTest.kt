@@ -22,12 +22,15 @@ class PluginLoaderTest : BaseTest() {
         super.setUp()
         gitConfig = File(myFixture.project.basePath, ".git/config")
         gitConfig.parentFile.mkdirs()
+
+        PluginLoader.getInstance().clearCache();
     }
 
     @AfterEach
     override fun tearDown() {
         super.tearDown()
-        GitManager.getInstance().clear()
+
+        PluginLoader.getInstance().clearCache();
     }
 
     @Test
@@ -75,6 +78,11 @@ class PluginLoaderTest : BaseTest() {
         writeConfigContent("[remote \"origin\"]\n\turl = https://gitlab.com/tester/repo.git\n")
 
         GitManager.getInstance().addNamespace("https://gitlab.com/tester/repo.git")
+        PluginLoader.getInstance().getGitAccounts(
+            defaultGithubAccount,
+            defaultGitlabAccount
+        )
+
         val user = PluginLoader.getInstance().createGitUser(
             "tester-GL / https://gitlab.com / GITLAB [tester/repo]",
         )

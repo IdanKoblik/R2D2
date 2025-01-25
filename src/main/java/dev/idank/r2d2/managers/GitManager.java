@@ -43,6 +43,7 @@ public class GitManager {
         return instance == null ? (instance = new GitManager()) : instance;
     }
 
+
     public void loadNamespaces(Project project) {
         if (ApplicationManager.getApplication().isUnitTestMode())
             return;
@@ -54,11 +55,10 @@ public class GitManager {
             loadNamespaces(repository);
     }
 
-    public boolean loadNamespaces(GitRepository repo) {
+    public void loadNamespaces(GitRepository repo) {
         for (GitRemote remote : repo.getInfo().getRemotes())
             remote.getUrls().forEach(this::addNamespace);
 
-        return true;
     }
 
     public void addNamespace(String url) {
