@@ -56,7 +56,7 @@ public class SearchListener implements DocumentListener {
         updatePanel(filterItems(searchField.getText()));
     }
 
-    private Vector<String> filterItems(String query) {
+    public Vector<String> filterItems(String query) {
         Vector<String> filteredItems = new Vector<>();
         for (String item : allItems) {
             if (item.toLowerCase().contains(query.toLowerCase()))

@@ -2,6 +2,7 @@ package dev.idank.r2d2.annotators;
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.lang.annotation.HighlightSeverity;
+import dev.idank.r2d2.AnnotatorTest;
 import dev.idank.r2d2.BaseTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@AnnotatorTest
 class TODOAnnotatorTest extends BaseTest {
 
     @BeforeEach

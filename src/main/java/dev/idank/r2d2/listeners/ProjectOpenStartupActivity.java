@@ -37,7 +37,7 @@ public class ProjectOpenStartupActivity implements ProjectActivity {
     @Override
     public @Nullable Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
         MessageBusConnection connection = project.getMessageBus().connect();
-        connection.subscribe(GitRepository.GIT_REPO_CHANGE, new GitListener());
+        connection.subscribe(GitRepository.GIT_REPO_CHANGE, new GitListener(project));
 
         return connection;
     }

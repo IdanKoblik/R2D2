@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package dev.idank.r2d2;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.GitUserExtractor;
 import dev.idank.r2d2.git.Platform;
@@ -34,6 +35,7 @@ import dev.idank.r2d2.git.data.IssueData;
 import dev.idank.r2d2.git.data.UserData;
 import dev.idank.r2d2.managers.GitManager;
 import dev.idank.r2d2.managers.UserManager;
+import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
@@ -56,17 +58,14 @@ public class PluginLoader {
     private final Map<UserData, IssueData> issueData = new HashMap<>();
 
     private Set<String> users = new HashSet<>();
-    private Project project;
 
     public static PluginLoader getInstance() {
         return instance == null ? (instance = new PluginLoader()) : instance;
     }
 
-    public void loadIssueData() {
-        if (this.project == null)
-            return;
-
-        GitUserExtractor userExtractor = GitUserExtractor.Companion.getInstance();
+    @TestOnly
+    public void loadIssueData(Project project, GitRepository repo) {
+        GitUserExtractor userExtractor = GitUserExtractor.INSTANCE;
         userExtractor.invalidateCache();
 
         this.issueData.clear();
@@ -74,12 +73,17 @@ public class PluginLoader {
         GitManager.getInstance().clear();
         UserManager.getInstance().clear();
 
+        if (ApplicationManager.getApplication().isUnitTestMode() && repo != null) {
+            GitManager.getInstance().loadNamespaces(repo);
+            return;
+        }
+
         GitManager.getInstance().loadNamespaces(project);
         Set<String> gitLabAccounts = getGitlabAccounts(null);
         if (!gitLabAccounts.isEmpty()) {
             for (String account : gitLabAccounts) {
-                Map<Platform, UserData> gitlabUsers = userExtractor.extractUsers(project, createGitUser(account), Platform.GITLAB, true);
-                UserData data = gitlabUsers.get(Platform.GITLAB);
+                userExtractor.extractUsers(project, createGitUser(account), Platform.GITLAB, true);
+                UserData data = userExtractor.getUserData(Platform.GITLAB);
                 issueData.put(data, new GitlabService(data).fetchIssueData());
             }
 
@@ -89,11 +93,15 @@ public class PluginLoader {
         Set<String> gitHubAccounts = getGitHubAccounts(null);
         if (!gitHubAccounts.isEmpty()) {
             for (String account : gitHubAccounts) {
-                Map<Platform, UserData> githubUsers = userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
-                UserData data = githubUsers.get(Platform.GITHUB);
+                userExtractor.extractUsers(project, createGitUser(account), Platform.GITHUB, true);
+                UserData data = userExtractor.getUserData(Platform.GITHUB);
                 issueData.put(data, new GithubService(data).fetchIssueData());
             }
         }
+    }
+
+    public void loadIssueData(Project project) {
+        loadIssueData(project, null);
     }
 
     public Map<UserData, IssueData> getIssueData() {
@@ -188,14 +196,6 @@ public class PluginLoader {
             UserManager.getInstance().addUser(account);
             accounts.add(account.toString());
         }
-    }
-
-    public Project getProject() {
-        return project;
-    }
-
-    public void setProject(Project project) {
-        this.project = project;
     }
 
     public GitUser createGitUser(String selectedAccount) {

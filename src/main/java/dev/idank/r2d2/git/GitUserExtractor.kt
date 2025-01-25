@@ -29,7 +29,6 @@ import dev.idank.r2d2.git.data.GitUser
 import dev.idank.r2d2.git.data.UserData
 import dev.idank.r2d2.managers.UserManager
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.annotations.TestOnly
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil.accounts
 import org.jetbrains.plugins.github.util.GHCompatibilityUtil.getOrRequestToken
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager
@@ -37,67 +36,41 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-class GitUserExtractor private constructor() {
+object GitUserExtractor {
     private data class CacheEntry(
-        val users: EnumMap<Platform, UserData>,
+        val users: EnumMap<Platform, UserData> = EnumMap(Platform::class.java),
         val timestamp: Instant = Instant.now()
     )
 
-    private var cache: CacheEntry? = null
+    private var cache: CacheEntry = CacheEntry()
+    private val LOG = logger<GitUserExtractor>()
+    private val CACHE_DURATION = Duration.ofMinutes(5)
 
-    companion object {
-        private val LOG = logger<GitUserExtractor>()
-        private val CACHE_DURATION = Duration.ofMinutes(5)
-
-        @Volatile
-        private var instance: GitUserExtractor? = null
-
-        @JvmStatic
-        fun getInstance(): GitUserExtractor =
-            instance ?: synchronized(this) {
-                instance ?: GitUserExtractor().also { instance = it }
-            }
-
-        @TestOnly
-        @JvmStatic
-        fun resetInstance() {
-            instance = null
-        }
-
-        private fun String.normalizeUrl() =
-            replace(Regex("^https?://"), "")
-    }
+    private fun String.normalizeUrl() = replace(Regex("^https?://"), "")
 
     fun extractUsers(
         project: Project,
         gitUser: GitUser?,
         platform: Platform,
         force: Boolean
-    ): Map<Platform, UserData> = synchronized(this) {
-        val currentCache = cache
-        if (currentCache != null && Duration.between(currentCache.timestamp, Instant.now()) < CACHE_DURATION && !force)
-            return@synchronized currentCache.users.toMap()
+    ) = synchronized(this) {
+        if (!force && Duration.between(cache.timestamp, Instant.now()) < CACHE_DURATION) {
+            return@synchronized
+        }
 
-        val newUsers = EnumMap<Platform, UserData>(Platform::class.java)
         try {
             when {
-                gitUser != null && platform == Platform.GITHUB ->
-                    extractGithubUserData(project, gitUser, newUsers)
-                gitUser != null && platform == Platform.GITLAB ->
-                    extractGitlabUserData(gitUser, newUsers)
+                gitUser != null && platform == Platform.GITHUB -> extractGithubUserData(project, gitUser)
+                gitUser != null && platform == Platform.GITLAB -> extractGitlabUserData(gitUser)
             }
         } catch (e: Exception) {
             LOG.warn("Failed to extract user data for $platform", e)
         }
-
-        cache = CacheEntry(newUsers)
-        newUsers.toMap()
     }
 
     private fun extractGithubUserData(
         project: Project,
-        user: GitUser,
-        users: EnumMap<Platform, UserData>
+        user: GitUser
     ) {
         val normalizedInstance = user.instance.normalizeUrl()
 
@@ -114,16 +87,13 @@ class GitUserExtractor private constructor() {
                     user.url
                 )
 
-                users[Platform.GITHUB] = data
+                cache.users[Platform.GITHUB] = data
                 UserManager.getInstance().addUserData(user, data)
             }
         }
     }
 
-    private fun extractGitlabUserData(
-        user: GitUser,
-        users: EnumMap<Platform, UserData>
-    ) {
+    private fun extractGitlabUserData(user: GitUser) {
         val accountManager = PersistentGitLabAccountManager()
         val normalizedUserInstance = user.instance.normalizeUrl()
         val gitlabAccounts = accountManager.accountsState.value
@@ -146,23 +116,18 @@ class GitUserExtractor private constructor() {
                 user.url
             )
 
-            users[Platform.GITLAB] = data
+            cache.users[Platform.GITLAB] = data
             UserManager.getInstance().addUserData(user, data)
             break
         }
     }
 
+    fun getUserData(platform: Platform): UserData? = synchronized(this) {
+        return cache.users[platform]
+    }
+
     fun invalidateCache() = synchronized(this) {
-        cache = null
+        cache = CacheEntry()
     }
 
-    @TestOnly
-    fun getCachedUsers(): Map<Platform, UserData>? = synchronized(this) {
-        cache?.users?.toMap()
-    }
-
-    @TestOnly
-    fun setCachedUsers(users: EnumMap<Platform, UserData>?) = synchronized(this) {
-        cache = users?.let { CacheEntry(it) }
-    }
 }

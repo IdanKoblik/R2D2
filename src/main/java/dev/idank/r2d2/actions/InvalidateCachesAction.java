@@ -26,30 +26,39 @@ package dev.idank.r2d2.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.Messages;
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.git.GitUserExtractor;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.*;
 
 public class InvalidateCachesAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         PluginLoader instance = PluginLoader.getInstance();
-        GitUserExtractor gitUserExtractor = GitUserExtractor.Companion.getInstance();
-        ApplicationManager.getApplication().runWriteAction(() -> {
-            PluginLoader.getInstance().setProject(event.getProject());
-            gitUserExtractor.invalidateCache();
+        GitUserExtractor gitUserExtractor = GitUserExtractor.INSTANCE;
 
-            if (!ApplicationManager.getApplication().isUnitTestMode())
-                instance.loadIssueData();
+        ProgressManager.getInstance().run(new Task.Backgroundable(event.getProject(), "Invalidating Caches", false) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                if (ApplicationManager.getApplication().isUnitTestMode())
+                    return;
+
+
+                ApplicationManager.getApplication().runReadAction(() -> {
+                    gitUserExtractor.invalidateCache();
+                    instance.loadIssueData(event.getProject());
+                });
+
+                SwingUtilities.invokeLater(() ->
+                        Messages.showInfoMessage(event.getProject(), "Cache invalidated successfully!", "Cache Invalidation")
+                );
+            }
         });
-
-        if (!ApplicationManager.getApplication().isUnitTestMode()) {
-            ApplicationManager.getApplication().invokeLater(() ->
-                    Messages.showInfoMessage(event.getProject(),
-                            "Cache invalidated successfully!", "Cache Invalidation")
-            );
-        }
     }
 }

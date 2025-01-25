@@ -56,7 +56,7 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
-        return true;
+        return lineNum >= 0;
     }
 
     @Override
