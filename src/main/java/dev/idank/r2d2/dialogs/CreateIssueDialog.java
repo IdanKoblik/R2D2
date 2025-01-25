@@ -87,7 +87,7 @@ public class CreateIssueDialog extends DialogWrapper {
 
     private IssueData data = null;
     private final JPanel panel;
-    private GridBagConstraints gbc;
+    private final GridBagConstraints gbc;
 
     public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);

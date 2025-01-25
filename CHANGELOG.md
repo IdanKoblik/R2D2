@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.3-SNAPSHOT
+- Add more stable code and tests
+- Add more efficient thread work
+- Fix minor bugs in the code
+
 ## v2.2-SNAPSHOT
 - Fix GitHub rest api support
 

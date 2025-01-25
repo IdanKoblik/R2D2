@@ -2,12 +2,13 @@ package dev.idank.r2d2.git;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class PlatformTest {
+class PlatformTest {
 
     @Test
-    public void testPlatformName() {
+    void testPlatformName() {
         Platform github = Platform.GITHUB;
         Platform gitlab = Platform.GITLAB;
 
@@ -16,7 +17,7 @@ public class PlatformTest {
     }
 
     @Test
-    public void testFromName() {
+    void testFromName() {
         Platform github = Platform.fromName("(github)");
         assertEquals(Platform.GITHUB, github);
 

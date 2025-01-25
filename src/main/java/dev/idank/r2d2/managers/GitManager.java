@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package dev.idank.r2d2.managers;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.api.NetPattern;
 import dev.idank.r2d2.git.data.GitInfo;
@@ -42,14 +43,22 @@ public class GitManager {
         return instance == null ? (instance = new GitManager()) : instance;
     }
 
+
     public void loadNamespaces(Project project) {
+        if (ApplicationManager.getApplication().isUnitTestMode())
+            return;
+
         GitRepositoryManager gitRepositoryManager = GitRepositoryManager.getInstance(project);
 
         List<GitRepository> repositories = gitRepositoryManager.getRepositories();
-        for (GitRepository repository : repositories) {
-            for (GitRemote remote : repository.getInfo().getRemotes())
-                remote.getUrls().forEach(this::addNamespace);
-        }
+        for (GitRepository repository : repositories)
+            loadNamespaces(repository);
+    }
+
+    public void loadNamespaces(GitRepository repo) {
+        for (GitRemote remote : repo.getInfo().getRemotes())
+            remote.getUrls().forEach(this::addNamespace);
+
     }
 
     public void addNamespace(String url) {
