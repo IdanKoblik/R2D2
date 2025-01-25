@@ -105,9 +105,7 @@ public class PluginLoader {
     }
 
     public Set<String> getGitAccounts() {
-        if (users.isEmpty())
-            this.users = getGitAccountsHelper(null, null);
-
+        this.users = getGitAccountsHelper(null, null);
         return Collections.unmodifiableSet(this.users);
     }
 
