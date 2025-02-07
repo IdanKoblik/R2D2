@@ -12,7 +12,7 @@ group = "dev.idank"
 version = figureVersion()
 
 fun figureVersion(): String {
-    return (if (System.getenv("VERSION") == null) "dev" else System.getenv("VERSION"))
+    return (if (System.getenv("VERSION") == null) "dev-SNAPSHOT" else System.getenv("VERSION"))
 }
 
 repositories {
