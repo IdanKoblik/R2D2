@@ -47,11 +47,13 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
     private final String title;
     private final String description;
     private final int lineNum;
+    private final PluginLoader pluginLoader;
 
-    public CreateIssueIntentionAction(String title, String description, int lineNum) {
+    public CreateIssueIntentionAction(String title, String description, int lineNum, PluginLoader pluginLoader) {
         this.title = title;
         this.description = description;
         this.lineNum = lineNum;
+        this.pluginLoader = pluginLoader;
     }
 
     @Override
@@ -65,10 +67,7 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
             return;
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            if (ApplicationManager.getApplication().isUnitTestMode())
-                return;
-
-            if (PluginLoader.getInstance().getGitAccounts().isEmpty()) {
+            if (this.pluginLoader.getGitAccounts().isEmpty()) {
                 UIUtils.showError("You must have at least one git user connected to idea", new JTextField());
                 ShowSettingsUtil.getInstance().showSettingsDialog(project,
                         Configurable.APPLICATION_CONFIGURABLE.getName());
@@ -76,7 +75,14 @@ public class CreateIssueIntentionAction extends BaseIntentionAction {
                 return;
             }
 
-            CreateIssueDialog dialog = new CreateIssueDialog(project, title, description, lineNum, editor.getDocument());
+            CreateIssueDialog dialog = new CreateIssueDialog(
+                    project,
+                    this.pluginLoader,
+                    title,
+                    description,
+                    lineNum, editor.getDocument()
+            );
+
             dialog.showAndGet();
         });
     }

@@ -23,27 +23,18 @@ SOFTWARE.
  */
 package dev.idank.r2d2.utils;
 
-import com.intellij.openapi.application.ApplicationManager;
-
 import javax.swing.*;
 import java.awt.*;
 
 public class UIUtils {
 
-    private static void handle(Runnable action) {
-        if (!ApplicationManager.getApplication().isUnitTestMode()) {
-            SwingUtilities.invokeLater(action);
-        }
-    }
-
-
     public static void showError(String message, Component parent) {
-        handle(() -> JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE));
+        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE));
     }
 
 
     public static void showSuccess(String message, Component parent) {
-        handle(() -> JOptionPane.showMessageDialog(parent, message, "Success", JOptionPane.INFORMATION_MESSAGE));
+        SwingUtilities.invokeLater((() -> JOptionPane.showMessageDialog(parent, message, "Success", JOptionPane.INFORMATION_MESSAGE)));
     }
 
 }

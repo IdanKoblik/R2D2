@@ -25,9 +25,8 @@ package dev.idank.r2d2.listeners;
 
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.dialogs.CreateIssueDialog;
+import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.GitUser;
-import dev.idank.r2d2.git.data.UserData;
-import dev.idank.r2d2.managers.UserManager;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,18 +35,20 @@ import java.util.Optional;
 public class AccountComboListener implements ActionListener {
 
     private final CreateIssueDialog dialog;
+    private final PluginLoader pluginLoader;
 
-    public AccountComboListener(CreateIssueDialog dialog) {
+    public AccountComboListener(CreateIssueDialog dialog, PluginLoader pluginLoader) {
         this.dialog = dialog;
+        this.pluginLoader = pluginLoader;
     }
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
-        GitUser gitUser = PluginLoader.getInstance().createGitUser(dialog.getSelectedAccount());
+        GitUser gitUser = this.pluginLoader.createGitUser(dialog.getSelectedAccount());
         if (gitUser == null)
             return;
 
-        Optional<UserData> userDataOpt = UserManager.getInstance().getUserData(gitUser);
-        userDataOpt.ifPresent(userData -> dialog.setData(PluginLoader.getInstance().getIssueData().get(userData)));
+        Optional<AuthData> userDataOpt = this.pluginLoader.getUserManager().getUserData(gitUser);
+        userDataOpt.ifPresent(userData -> dialog.setData(this.pluginLoader.getIssueData().get(userData)));
     }
 }

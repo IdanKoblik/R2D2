@@ -35,20 +35,17 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
+import dev.idank.r2d2.git.GitHostFactory;
 import dev.idank.r2d2.git.Platform;
-import dev.idank.r2d2.git.api.GitService;
-import dev.idank.r2d2.git.api.GithubService;
-import dev.idank.r2d2.git.api.GitlabService;
+import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.GitUser;
-import dev.idank.r2d2.git.data.IssueData;
-import dev.idank.r2d2.git.data.Milestone;
-import dev.idank.r2d2.git.data.UserData;
+import dev.idank.r2d2.git.data.issue.IssueData;
+import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
 import dev.idank.r2d2.git.request.IssueRequest;
 import dev.idank.r2d2.listeners.AccountComboListener;
 import dev.idank.r2d2.listeners.SearchListener;
-import dev.idank.r2d2.managers.UserManager;
 import dev.idank.r2d2.utils.UIUtils;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
@@ -69,6 +66,7 @@ public class CreateIssueDialog extends DialogWrapper {
     public static final String NO_MILESTONE = "No milestone";
 
     private final Project project;
+    private final PluginLoader pluginLoader;
     private final int lineNum;
     private final Document document;
     private final String title;
@@ -89,9 +87,10 @@ public class CreateIssueDialog extends DialogWrapper {
     private final JPanel panel;
     private final GridBagConstraints gbc;
 
-    public CreateIssueDialog(Project project, @NotNull String title, @NotNull String description, int lineNum, Document document) {
+    public CreateIssueDialog(Project project, PluginLoader pluginLoader, @NotNull String title, @NotNull String description, int lineNum, Document document) {
         super(project);
         this.project = project;
+        this.pluginLoader = pluginLoader;
         this.lineNum = lineNum;
         this.document = document;
         this.title = title;
@@ -100,18 +99,18 @@ public class CreateIssueDialog extends DialogWrapper {
         this.panel = new JPanel(new GridBagLayout());
         this.gbc = new GridBagConstraints();
 
-        this.accounts = new Vector<>(PluginLoader.getInstance().getGitAccounts());
+        this.accounts = new Vector<>(this.pluginLoader.getGitAccounts());
         String firstUser = accounts.firstElement();
-        Optional<GitUser> gitUserOpt = UserManager.getInstance().getUser(firstUser);
+        Optional<GitUser> gitUserOpt = this.pluginLoader.getUserManager().getUser(firstUser);
         if (gitUserOpt.isEmpty())
             return;
 
-        Optional<UserData> userDataOpt = UserManager.getInstance().getUserData(gitUserOpt.get());
+        Optional<AuthData> userDataOpt = this.pluginLoader.getUserManager().getUserData(gitUserOpt.get());
         if (userDataOpt.isEmpty())
             return;
 
         setData(
-                PluginLoader.getInstance().getIssueData().get(userDataOpt.get()),
+                this.pluginLoader.getIssueData().get(userDataOpt.get()),
                 false
         );
 
@@ -168,7 +167,7 @@ public class CreateIssueDialog extends DialogWrapper {
         leftGbc.gridx = 1;
         leftGbc.weightx = 1.0;
         accountCombo = new JComboBox<>(accounts);
-        accountCombo.addActionListener(new AccountComboListener(this));
+        accountCombo.addActionListener(new AccountComboListener(this, pluginLoader));
         leftPanel.add(accountCombo, leftGbc);
 
         leftGbc.gridx = 0;
@@ -259,8 +258,12 @@ public class CreateIssueDialog extends DialogWrapper {
         if (!validateInput())
             return;
 
-        GitUser git = PluginLoader.getInstance().createGitUser(getSelectedAccount());
-        createIssue(git);
+        GitUser user = this.pluginLoader.createGitUser(getSelectedAccount());
+        IssueRequest request = createIssueRequest(user);
+        if (request == null)
+            return;
+
+        processIssueCreation(user, request);
 
         super.doOKAction();
     }
@@ -291,46 +294,37 @@ public class CreateIssueDialog extends DialogWrapper {
         return true;
     }
 
-    private void createIssue(GitUser user) {
-        String milestone = null;
-        if (!getSelectedMilestone().equals(NO_MILESTONE))
-            milestone = getSelectedMilestone().trim().split(" : ")[1];
-
-        Optional<UserData> userDataOpt = UserManager.getInstance().getUserData(user);
-        if (userDataOpt.isEmpty())
-            return;
-
-        UserData userData = userDataOpt.get();
+    private IssueRequest createIssueRequest(GitUser user) {
         Platform platform = user.platform();
         if (platform == Platform.GITHUB) {
-            GithubIssueRequest request = new GithubIssueRequest(
+            return new GithubIssueRequest(
                     getTitle(),
                     getDescription(),
                     getSelectedItems(labelPanel),
                     getSelectedItems(assigneesPanel).stream().map(
                             item -> item.trim().split(" : ")[0]
                     ).collect(Collectors.toSet()),
-                    milestone
+                    getSelectedMilestone().equals(NO_MILESTONE) ? null : getSelectedMilestone().trim().split(" : ")[1]
             );
+        }
 
-            processIssueCreation(new GithubService(userData), request, platform);
-        } else if (platform == Platform.GITLAB) {
-            GitlabIssueRequest request = new GitlabIssueRequest(
+        if (platform == Platform.GITLAB) {
+            return new GitlabIssueRequest(
                     getTitle(),
                     getDescription(),
                     getSelectedItems(labelPanel),
                     getSelectedItems(assigneesPanel).stream().map(
                             item -> Integer.parseInt(item.trim().split(" : ")[1])
                     ).collect(Collectors.toSet()),
-                    milestone
+                    getSelectedMilestone().equals(NO_MILESTONE) ? null : getSelectedMilestone().trim().split(" : ")[1]
             );
-
-            processIssueCreation(new GitlabService(userData), request, platform);
         }
+
+        return null;
     }
 
-    private <T extends IssueRequest> void processIssueCreation(GitService<T> gitService, T request, Platform platform) {
-        try (Response response = gitService.createIssue(request)) {
+    private void processIssueCreation(GitUser user, IssueRequest request) {
+        try (Response response = new GitHostFactory().createGitHost(project, user).createIssue(request)) {
             if (!response.isSuccessful()) {
                 UIUtils.showError("An error appeared while creating an issue: " + response.code() + "\n" + "Target: " + response.request().url(), titleField);
                 return;
@@ -340,7 +334,7 @@ public class CreateIssueDialog extends DialogWrapper {
             UIUtils.showSuccess("Successfully created an issue", titleField);
 
             if (lineNum >= 0)
-                updateDocument(bodyString, platform);
+                updateDocument(bodyString, user.platform());
         } catch (Exception e) {
             UIUtils.showError("An error occurred while processing the request", titleField);
         }

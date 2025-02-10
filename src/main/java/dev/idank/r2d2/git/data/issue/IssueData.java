@@ -21,14 +21,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-package dev.idank.r2d2.git.data;
+package dev.idank.r2d2.git.data.issue;
 
-public record UserData(
-        String username,
-        String token,
-        String instance,
-        String namespace,
-        String url
+import dev.idank.r2d2.git.data.User;
+
+import java.util.Set;
+
+public record IssueData(
+        Set<String> labels,
+        Set<User> users,
+        Set<Milestone> milestones
 ) {
-
 }

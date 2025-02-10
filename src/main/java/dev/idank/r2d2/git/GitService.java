@@ -21,14 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-package dev.idank.r2d2.git.api;
+package dev.idank.r2d2.git;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.idank.r2d2.git.data.IssueData;
-import dev.idank.r2d2.git.data.Milestone;
+import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.User;
-import dev.idank.r2d2.git.data.UserData;
+import dev.idank.r2d2.git.data.issue.IssueData;
+import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.IssueRequest;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -38,18 +38,14 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract sealed class GitService<R extends IssueRequest> permits GithubService, GitlabService {
+public abstract class GitService<R extends IssueRequest> {
 
     protected final ObjectMapper objectMapper = new ObjectMapper();
     protected final OkHttpClient client = new OkHttpClient();
 
-    protected final UserData data;
+    protected AuthData authData;
 
-    protected GitService(UserData data) {
-        this.data = data;
-    }
-
-    public abstract Response createIssue(R request) throws IOException;
+    public abstract Response createIssue(IssueRequest request) throws IOException;
     public abstract IssueData fetchIssueData() throws IOException;
 
     protected Set<User> fetchUsers(String url, String usernameProperty) {
@@ -121,7 +117,7 @@ public abstract sealed class GitService<R extends IssueRequest> permits GithubSe
     private JsonNode createGetRequest(String url) {
         Request request = new Request.Builder()
                 .url(url)
-                .header("Authorization", "Bearer " + data.token())
+                .header("Authorization", "Bearer " + authData.token())
                 .get()
                 .build();
 

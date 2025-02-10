@@ -39,6 +39,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="dev.idank.r2d2.listeners.ProjectOpenStartupActivity"/>
 
+        <project-components>
+            <component implementation="dev.idank.r2d2.services.PluginLoaderService"/>
+        </project-components>
+
         <annotator
             language="JAVA"
             implementationClass="dev.idank.r2d2.annotators.TODOAnnotator"/>

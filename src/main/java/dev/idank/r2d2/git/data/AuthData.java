@@ -23,8 +23,14 @@ SOFTWARE.
  */
 package dev.idank.r2d2.git.data;
 
-public record Milestone(
-        String id,
-        String name
+/**
+ * Auth data of the git user
+ * @param token - user token
+ * @param user - user data
+ */
+public record AuthData(
+        String token,
+        GitUser user
 ) {
+
 }

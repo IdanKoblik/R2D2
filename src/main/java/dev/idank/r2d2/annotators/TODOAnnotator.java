@@ -32,6 +32,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import dev.idank.r2d2.TodoContext;
 import dev.idank.r2d2.handler.JavaTodoHandler;
 import dev.idank.r2d2.handler.KotlinTodoHandler;
+import dev.idank.r2d2.services.PluginLoaderService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtCallExpression;
 
@@ -58,7 +59,7 @@ public class TODOAnnotator implements Annotator {
             return;
         }
 
-        new JavaTodoHandler(context).process(holder);
+        new JavaTodoHandler(context, project.getService(PluginLoaderService.class).getPluginLoader()).process(holder);
     }
 
     private boolean isInJavaDoc(PsiElement element) {
