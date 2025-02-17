@@ -33,7 +33,9 @@ import dev.idank.r2d2.git.data.GitUser;
 import dev.idank.r2d2.git.data.issue.IssueData;
 import dev.idank.r2d2.managers.GitManager;
 import dev.idank.r2d2.managers.UserManager;
+import git4idea.repo.GitRepository;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
+import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager;
@@ -49,20 +51,18 @@ public class PluginLoader {
     public static final String HTTP_REGEX = "http://([a-zA-Z0-9.-]+)/(.+?)(\\.git)?$";
 
     private final Map<AuthData, IssueData> issueData = new HashMap<>();
+
     private GitManager gitManager;
     private UserManager userManager;
+    private GitRepository gitRepository;
 
-    public PluginLoader(Project project) {
-        onEnable(project);
-    }
-
-    public void onEnable(Project project) {
+    public void onEnable(Project project, GitRepository gitRepository) {
         this.gitManager = new GitManager();
         this.userManager = new UserManager();
-        this.gitManager.loadNamespaces(project);
+        this.gitManager.loadNamespaces(gitRepository);
+        this.gitRepository = gitRepository;
 
         Set<String> gitAccounts = getGitAccounts();
-
         for (String account : gitAccounts) {
             GitHostFactory factory = new GitHostFactory();
             GitUser gitUser = createGitUser(account);
@@ -79,6 +79,10 @@ public class PluginLoader {
         }
     }
 
+    public GitRepository getGitRepository() {
+        return gitRepository;
+    }
+
     public GitManager getGitManager() {
         return gitManager;
     }
@@ -92,23 +96,18 @@ public class PluginLoader {
     }
 
     public Set<String> getGitAccounts() {
-        Set<String> users = getGitAccountsHelper();
-        return Collections.unmodifiableSet(users);
-    }
-
-    private Set<String> getGitAccountsHelper() {
         Set<String> accounts = new HashSet<>();
         Set<String> githubAccounts = getGitHubAccounts();
         Set<String> gitLabAccounts = getGitlabAccounts();
 
         accounts.addAll(githubAccounts);
         accounts.addAll(gitLabAccounts);
-        return accounts;
+        return Collections.unmodifiableSet(accounts);
     }
 
     private Set<String> getGitHubAccounts() {
         Set<String> accounts = new HashSet<>();
-        for (GithubAccount ghAccount : GHAccountsUtil.getAccounts())
+        for (GithubAccount ghAccount : new GHAccountManager().getAccountsState().getValue())
             constructGithubAccount(ghAccount, accounts);
 
         return accounts;

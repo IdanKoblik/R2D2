@@ -11,6 +11,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
+import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.github.util.GHCompatibilityUtil;
 
@@ -28,11 +29,11 @@ public class GithubHost extends GitHost<GithubIssueRequest> {
     public AuthData authData(Project project, GitUser user) {
         String url = normalizeURL(user.instance());
 
-        Optional<GithubAccount> ghAccountOpt = GHAccountsUtil.getAccounts()
+        Optional<GithubAccount> ghAccountOpt = new GHAccountManager().getAccountsState().getValue()
                 .stream()
                 .filter(account ->
                         account.getName().equals(user.username())
-                                && normalizeURL(account.getServer().toString()).equals(url)
+                        && normalizeURL(account.getServer().toString()).equals(url)
                 ).findFirst();
 
         if (ghAccountOpt.isEmpty())

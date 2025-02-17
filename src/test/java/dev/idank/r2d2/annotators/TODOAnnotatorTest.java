@@ -30,8 +30,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testNormalCommentSingleLine() {
-        myFixture.configureByFile("NormalCommentSingleLine.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("NormalCommentSingleLine.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
         
         assertTrue(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
@@ -43,8 +43,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testMultiLineNormalComment() {
-        myFixture.configureByFile("MultiLineNormalComment.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("MultiLineNormalComment.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         assertTrue(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
@@ -56,8 +56,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testBlockCommentSingleLine() {
-        myFixture.configureByFile("BlockCommentSingleLine.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("BlockCommentSingleLine.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         assertTrue(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
@@ -69,8 +69,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testBlockCommentMultiLine() {
-        myFixture.configureByFile("BlockCommentMultiLine.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("BlockCommentMultiLine.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         assertTrue(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
@@ -82,8 +82,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testJavadocCommentNotCounted() {
-        myFixture.configureByFile("JavadocComment.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("JavadocComment.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         assertFalse(highlights.stream()
                 .filter(highlight -> highlight.getDescription() != null)
@@ -94,8 +94,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testMultipleTodos() {
-        myFixture.configureByFile("MultipleTodos.java");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("MultipleTodos.java");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         String[] expectedTodos = {
                 "TODO Implement feature A",
@@ -114,8 +114,8 @@ class TODOAnnotatorTest extends BaseTest {
 
     @Test
     void testKotlinTodoParameters() {
-        myFixture.configureByFile("KotlinTodoParameters.kt");
-        List<HighlightInfo> highlights = myFixture.doHighlighting();
+        getMyFixture().configureByFile("KotlinTodoParameters.kt");
+        List<HighlightInfo> highlights = getMyFixture().doHighlighting();
 
         String[] expectedTodos = {
                 "TODO(\"First todo\")",

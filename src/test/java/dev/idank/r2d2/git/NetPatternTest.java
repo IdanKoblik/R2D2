@@ -1,5 +1,6 @@
 package dev.idank.r2d2.git;
 
+import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

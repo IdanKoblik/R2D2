@@ -21,6 +21,7 @@ public class GitListener implements GitRepositoryChangeListener {
         ApplicationManager.getApplication().runWriteAction(() -> {
             PluginLoaderService service = project.getService(PluginLoaderService.class);
             PluginLoader pluginLoader = service.getPluginLoader();
+            pluginLoader.onEnable(project, gitRepository);
         });
     }
 }

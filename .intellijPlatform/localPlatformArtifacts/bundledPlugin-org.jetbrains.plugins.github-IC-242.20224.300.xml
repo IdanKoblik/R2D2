@@ -1,0 +1,14 @@
+<ivy-module version="2.0">
+  <info organisation="bundledPlugin" module="org.jetbrains.plugins.github" revision="IC-242.20224.300"/>
+  <configurations>
+    <conf name="default" visibility="public"/>
+  </configurations>
+  <publications>
+    <artifact name="vcs-github" ext="jar" conf="default" url="plugins/vcs-github/lib"/>
+  </publications>
+  <dependencies>
+    <dependency org="bundledModule" name="intellij.platform.collaborationTools" rev="IC-242.20224.300"/>
+    <dependency org="bundledPlugin" name="Git4Idea" rev="IC-242.20224.300"/>
+    <dependency org="bundledPlugin" name="com.intellij.tasks" rev="IC-242.20224.300"/>
+  </dependencies>
+</ivy-module>

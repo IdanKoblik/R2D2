@@ -20,7 +20,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
 
 package dev.idank.r2d2.actions;
 
@@ -50,7 +50,7 @@ public class InvalidateCachesAction extends AnAction {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 ApplicationManager.getApplication().runReadAction(() -> {
-                    pluginLoader.onEnable(project);
+                    pluginLoader.onEnable(project, pluginLoader.getGitRepository());
                 });
 
                 SwingUtilities.invokeLater(() ->

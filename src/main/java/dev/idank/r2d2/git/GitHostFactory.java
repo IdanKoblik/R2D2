@@ -1,6 +1,7 @@
 package dev.idank.r2d2.git;
 
 import com.intellij.openapi.project.Project;
+import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.GitUser;
 
 public class GitHostFactory {

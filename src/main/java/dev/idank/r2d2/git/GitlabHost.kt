@@ -23,7 +23,7 @@ class GitlabHost(project: Project?, user: GitUser?) : GitHost<GitlabIssueRequest
 
     init {
         this.authData = authData(project, user)
-        this.namespace = URLUtil.encodeURIComponent(authData.user.projectInfo.namespace);
+        this.namespace = URLUtil.encodeURIComponent(this.authData.user.projectInfo.namespace);
     }
 
     override fun authData(project: Project?, user: GitUser?): AuthData? {
