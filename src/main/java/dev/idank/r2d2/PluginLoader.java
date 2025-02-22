@@ -34,7 +34,7 @@ import dev.idank.r2d2.git.data.issue.IssueData;
 import dev.idank.r2d2.managers.GitManager;
 import dev.idank.r2d2.managers.UserManager;
 import git4idea.repo.GitRepository;
-import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
+import okhttp3.OkHttpClient;
 import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
@@ -52,6 +52,7 @@ public class PluginLoader {
 
     private final Map<AuthData, IssueData> issueData = new HashMap<>();
 
+    private OkHttpClient client = new OkHttpClient();
     private GitManager gitManager;
     private UserManager userManager;
     private GitRepository gitRepository;
@@ -66,7 +67,7 @@ public class PluginLoader {
         for (String account : gitAccounts) {
             GitHostFactory factory = new GitHostFactory();
             GitUser gitUser = createGitUser(account);
-            GitHost<?> gitHost = factory.createGitHost(project, gitUser);
+            GitHost gitHost = factory.createGitHost(project, gitUser);
             gitHost.getAuthData().ifPresent(data -> {
                 this.userManager.addUserData(gitUser, data);
 
@@ -167,5 +168,13 @@ public class PluginLoader {
 
         Optional<GitUser> userOpt = this.userManager.getUser(selectedAccount);
         return userOpt.orElse(null);
+    }
+
+    public OkHttpClient getClient() {
+        return client;
+    }
+
+    public void setClient(OkHttpClient client) {
+        this.client = client;
     }
 }

@@ -47,8 +47,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
 
+    testImplementation("org.mockito:mockito-core:5.15.2")
     testImplementation("org.junit.jupiter:junit-jupiter:${findProperty("junit.version")}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${findProperty("okhttp.version")}")
+    testImplementation(kotlin("test"))
 }
 
 tasks {

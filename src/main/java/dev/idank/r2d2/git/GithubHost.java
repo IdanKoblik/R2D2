@@ -4,13 +4,11 @@ import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.GitUser;
 import dev.idank.r2d2.git.data.issue.IssueData;
-import dev.idank.r2d2.git.request.GithubIssueRequest;
 import dev.idank.r2d2.git.request.IssueRequest;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.jetbrains.plugins.github.authentication.GHAccountsUtil;
 import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.github.util.GHCompatibilityUtil;
@@ -18,7 +16,9 @@ import org.jetbrains.plugins.github.util.GHCompatibilityUtil;
 import java.io.IOException;
 import java.util.Optional;
 
-public class GithubHost extends GitHost<GithubIssueRequest> {
+public class GithubHost extends GitHost {
+
+    private final Object lock = new Object();
 
     public GithubHost(Project project, GitUser user) {
         super(project, user);
@@ -33,7 +33,7 @@ public class GithubHost extends GitHost<GithubIssueRequest> {
                 .stream()
                 .filter(account ->
                         account.getName().equals(user.username())
-                        && normalizeURL(account.getServer().toString()).equals(url)
+                                && normalizeURL(account.getServer().toString()).equals(url)
                 ).findFirst();
 
         if (ghAccountOpt.isEmpty())
@@ -49,15 +49,21 @@ public class GithubHost extends GitHost<GithubIssueRequest> {
 
     @Override
     public Response createIssue(IssueRequest requestData) throws IOException {
-        String url = "%s/repos/%s/issues".formatted(resolveInstance(), authData.user().projectInfo().namespace());
-        RequestBody body = RequestBody.create(objectMapper.writeValueAsBytes(requestData), MediaType.get("application/json"));
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer " + authData.token())
-                .post(body)
-                .build();
+        synchronized (lock) {
+            String url = "%s/repos/%s/issues".formatted(resolveInstance(), authData.user().projectInfo().namespace());
+            RequestBody body = RequestBody.create(objectMapper.writeValueAsBytes(requestData), MediaType.get("application/json"));
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", "Bearer " + authData.token())
+                    .post(body)
+                    .build();
 
-        return client.newCall(request).execute();
+            try (Response response = client.newCall(request).execute()) {
+                return response;
+            } finally {
+                client.dispatcher().executorService().shutdown();
+            }
+        }
     }
 
     @Override

@@ -18,7 +18,7 @@ public class GitListener implements GitRepositoryChangeListener {
 
     @Override
     public void repositoryChanged(@NotNull GitRepository gitRepository) {
-        ApplicationManager.getApplication().runWriteAction(() -> {
+        ApplicationManager.getApplication().runReadAction(() -> {
             PluginLoaderService service = project.getService(PluginLoaderService.class);
             PluginLoader pluginLoader = service.getPluginLoader();
             pluginLoader.onEnable(project, gitRepository);

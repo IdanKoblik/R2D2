@@ -3,16 +3,17 @@ package dev.idank.r2d2.git;
 import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.GitUser;
-import dev.idank.r2d2.git.request.IssueRequest;
+import dev.idank.r2d2.services.PluginLoaderService;
 
 import java.util.Optional;
 
-public abstract class GitHost<R extends IssueRequest> extends GitService<R> {
+public abstract class GitHost extends GitService {
 
     protected final Project project;
     protected final GitUser user;
 
     public GitHost(Project project, GitUser user) {
+        super(project.getService(PluginLoaderService.class).getPluginLoader().getClient());
         this.project = project;
         this.user = user;
     }

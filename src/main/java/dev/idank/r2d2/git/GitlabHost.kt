@@ -5,7 +5,6 @@ import com.intellij.util.io.URLUtil
 import dev.idank.r2d2.git.data.AuthData
 import dev.idank.r2d2.git.data.GitUser
 import dev.idank.r2d2.git.data.issue.IssueData
-import dev.idank.r2d2.git.request.GitlabIssueRequest
 import dev.idank.r2d2.git.request.IssueRequest
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaType
@@ -17,7 +16,7 @@ import java.io.IOException
 
 val accountManager = PersistentGitLabAccountManager()
 
-class GitlabHost(project: Project?, user: GitUser?) : GitHost<GitlabIssueRequest>(project, user) {
+class GitlabHost(project: Project?, user: GitUser?) : GitHost(project, user) {
 
     private var namespace: String? = null
 
@@ -48,6 +47,7 @@ class GitlabHost(project: Project?, user: GitUser?) : GitHost<GitlabIssueRequest
     }
 
     @Throws(IOException::class)
+    @Synchronized
     override fun createIssue(request: IssueRequest): Response? {
         val url = "${authData.user.instance}/api/v4/projects/${this.namespace}/issues"
         val body = this.objectMapper.writeValueAsBytes(request).toRequestBody(
@@ -60,7 +60,13 @@ class GitlabHost(project: Project?, user: GitUser?) : GitHost<GitlabIssueRequest
             .post(body)
             .build()
 
-        return client.newCall(request).execute()
+        try {
+            client.newCall(request).execute().use { response ->
+                return response
+            }
+        } finally {
+            client.dispatcher.executorService.shutdown()
+        }
     }
 
     override fun fetchIssueData(): IssueData {

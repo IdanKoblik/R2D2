@@ -23,6 +23,7 @@ SOFTWARE.
  */
 package dev.idank.r2d2.git;
 
+import ai.grazie.annotation.TestOnly;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idank.r2d2.git.data.AuthData;
@@ -38,12 +39,18 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class GitService<R extends IssueRequest> {
+public abstract class GitService {
+
+    private final Object lock = new Object();
 
     protected final ObjectMapper objectMapper = new ObjectMapper();
-    protected final OkHttpClient client = new OkHttpClient();
+    protected OkHttpClient client;
 
     protected AuthData authData;
+
+    protected GitService(OkHttpClient client) {
+        this.client = client;
+    }
 
     public abstract Response createIssue(IssueRequest request) throws IOException;
     public abstract IssueData fetchIssueData() throws IOException;
@@ -115,20 +122,29 @@ public abstract class GitService<R extends IssueRequest> {
     }
 
     private JsonNode createGetRequest(String url) {
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer " + authData.token())
-                .get()
-                .build();
+        synchronized (lock) {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", "Bearer " + authData.token())
+                    .get()
+                    .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (response.body() == null)
-                return null;
+            try (Response response = client.newCall(request).execute()) {
+                if (response.body() == null)
+                    return null;
 
-            String responseBody = response.body().string();
-            return objectMapper.readTree(responseBody);
-        } catch (IOException e) {
-            throw new RuntimeException("Request failed due to an I/O error", e);
+                String responseBody = response.body().string();
+                return objectMapper.readTree(responseBody);
+            } catch (IOException e) {
+                throw new RuntimeException("Request failed due to an I/O error", e);
+            } finally {
+                client.dispatcher().executorService().shutdown();
+            }
         }
+    }
+
+    @TestOnly
+    public void setClient(OkHttpClient client) {
+        this.client = client;
     }
 }

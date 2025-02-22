@@ -24,8 +24,8 @@ SOFTWARE.
 package dev.idank.r2d2.git;
 
 public enum Platform {
-    GITLAB("(gitlab)"),
-    GITHUB("(github)");
+    GITLAB("gitlab"),
+    GITHUB("github");
 
     private final String name;
 
