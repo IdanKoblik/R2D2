@@ -23,7 +23,6 @@ SOFTWARE.
  */
 package dev.idank.r2d2.git;
 
-import ai.grazie.annotation.TestOnly;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.idank.r2d2.git.data.AuthData;
@@ -31,29 +30,36 @@ import dev.idank.r2d2.git.data.User;
 import dev.idank.r2d2.git.data.issue.IssueData;
 import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.IssueRequest;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import dev.idank.r2d2.git.response.IssueResponse;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Set;
 
 public abstract class GitService {
 
-    private final Object lock = new Object();
-
     protected final ObjectMapper objectMapper = new ObjectMapper();
-    protected OkHttpClient client;
-
     protected AuthData authData;
 
-    protected GitService(OkHttpClient client) {
-        this.client = client;
-    }
-
-    public abstract Response createIssue(IssueRequest request) throws IOException;
     public abstract IssueData fetchIssueData() throws IOException;
+
+    public <T extends IssueResponse> T createIssue(IssueRequest requestData, Class<T> clazz) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getIssueCreationEndpoint()))
+                .header("Authorization", "Bearer " + authData.token())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestData)))
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(response.body(), clazz);
+    }
 
     protected Set<User> fetchUsers(String url, String usernameProperty) {
         JsonNode jsonArray = createGetRequest(url);
@@ -122,29 +128,25 @@ public abstract class GitService {
     }
 
     private JsonNode createGetRequest(String url) {
-        synchronized (lock) {
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header("Authorization", "Bearer " + authData.token())
-                    .get()
-                    .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + authData.token())
+                .header("Content-Type", "application/json")
+                .GET()
+                .build();
 
-            try (Response response = client.newCall(request).execute()) {
-                if (response.body() == null)
-                    return null;
+        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.body() == null)
+                return null;
 
-                String responseBody = response.body().string();
-                return objectMapper.readTree(responseBody);
-            } catch (IOException e) {
-                throw new RuntimeException("Request failed due to an I/O error", e);
-            } finally {
-                client.dispatcher().executorService().shutdown();
-            }
+            String responseBody = response.body();
+            return objectMapper.readTree(responseBody);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Request failed due to an I/O error", e);
         }
     }
 
-    @TestOnly
-    public void setClient(OkHttpClient client) {
-        this.client = client;
-    }
+    protected abstract String getIssueCreationEndpoint();
 }

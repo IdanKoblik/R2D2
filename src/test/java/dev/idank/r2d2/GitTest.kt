@@ -8,10 +8,9 @@ import com.intellij.testFramework.fixtures.IdeaProjectTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.TestFixtureBuilder
 import dev.idank.r2d2.git.Platform
+import dev.idank.r2d2.services.PluginLoaderService
+import dev.idank.r2d2.utils.PluginUtils
 import git4idea.GitVcs
-import git4idea.repo.GitRepositoryManager
-import kotlinx.coroutines.runBlocking
-import okhttp3.mockwebserver.MockWebServer
 import org.jetbrains.plugins.github.api.GithubServerPath
 import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount
@@ -21,6 +20,9 @@ import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAcco
 import kotlin.io.path.Path
 
 open class GitTest {
+
+    protected lateinit var gitLabAccountManager: PersistentGitLabAccountManager
+    protected lateinit var githubAccountManager: GHAccountManager
 
     protected val defaultGithubAccount: GithubAccount = GithubAccount(
         System.getProperty("github.user"),
@@ -36,8 +38,9 @@ open class GitTest {
 
     protected lateinit var myFixture: CodeInsightTestFixture
     protected lateinit var project: Project
+    protected lateinit var pluginLoader: PluginLoader
+
     protected var platform: Platform = Platform.GITHUB
-    protected var mockWebServer: MockWebServer? = null
 
     protected open fun setUp() {
         this.myFixture = createMyFixture()
@@ -45,27 +48,22 @@ open class GitTest {
         myFixture.setUp()
         this.project = myFixture.project
 
-        val gitlabAccountManager = PersistentGitLabAccountManager()
-        val githubAccountManager = GHAccountManager()
+        this.gitLabAccountManager = PersistentGitLabAccountManager()
+        this.githubAccountManager = GHAccountManager()
 
-        runBlocking {
-            githubAccountManager.updateAccount(defaultGithubAccount, defaultGithubAccount.id)
-            gitlabAccountManager.updateAccount(defaultGitlabAccount, defaultGitlabAccount.id)
-        }
+        PluginUtils.updateGitlabAccount(gitLabAccountManager, defaultGitlabAccount, PluginUtils.Action.INSERT)
+        PluginUtils.updateGithubAccount(githubAccountManager, defaultGithubAccount, PluginUtils.Action.INSERT)
 
         GitVcs.getInstance(myFixture.project).doActivate()
         val projectRoot = PlatformTestUtil.getOrCreateProjectBaseDir(myFixture.project)
         GitRepositoryInitializer.getInstance()?.initRepository(myFixture.project, projectRoot)
-        println(GitRepositoryManager.getInstance(project).repositories)
 
-        this.mockWebServer = MockWebServer()
+        this.pluginLoader = project.getService(PluginLoaderService::class.java).pluginLoader
     }
 
     protected open fun tearDown() {
-        mockWebServer?.shutdown()
         myFixture.tearDown()
     }
-
 
     private fun createMyFixture(): CodeInsightTestFixture {
         val fixtureBuilder = constructFixtureBuilder()
@@ -76,6 +74,6 @@ open class GitTest {
 
     private fun constructFixtureBuilder(): TestFixtureBuilder<IdeaProjectTestFixture> {
         val factory = IdeaTestFixtureFactory.getFixtureFactory()
-        return factory.createFixtureBuilder(platform.getName(), Path("/tmp/repo/"), true)
+        return factory.createFixtureBuilder(platform.test(), Path("/tmp/repo/"), true)
     }
 }

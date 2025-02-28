@@ -34,7 +34,6 @@ import dev.idank.r2d2.git.data.issue.IssueData;
 import dev.idank.r2d2.managers.GitManager;
 import dev.idank.r2d2.managers.UserManager;
 import git4idea.repo.GitRepository;
-import okhttp3.OkHttpClient;
 import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager;
 import org.jetbrains.plugins.github.authentication.accounts.GithubAccount;
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount;
@@ -50,9 +49,7 @@ public class PluginLoader {
     public static final String HTTPS_REGEX = "https://([a-zA-Z0-9.-]+)/(.+?)(\\.git)?$";
     public static final String HTTP_REGEX = "http://([a-zA-Z0-9.-]+)/(.+?)(\\.git)?$";
 
-    private final Map<AuthData, IssueData> issueData = new HashMap<>();
-
-    private OkHttpClient client = new OkHttpClient();
+    private Map<AuthData, IssueData> issueData;
     private GitManager gitManager;
     private UserManager userManager;
     private GitRepository gitRepository;
@@ -62,6 +59,7 @@ public class PluginLoader {
         this.userManager = new UserManager();
         this.gitManager.loadNamespaces(gitRepository);
         this.gitRepository = gitRepository;
+        this.issueData = new HashMap<>();
 
         Set<String> gitAccounts = getGitAccounts();
         for (String account : gitAccounts) {
@@ -170,11 +168,4 @@ public class PluginLoader {
         return userOpt.orElse(null);
     }
 
-    public OkHttpClient getClient() {
-        return client;
-    }
-
-    public void setClient(OkHttpClient client) {
-        this.client = client;
-    }
 }

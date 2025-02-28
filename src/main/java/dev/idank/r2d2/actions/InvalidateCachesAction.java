@@ -31,7 +31,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.services.PluginLoaderService;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +42,9 @@ public class InvalidateCachesAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         Project project = event.getProject();
+        if (project == null)
+            return;
+
         PluginLoaderService service = project.getService(PluginLoaderService.class);
         PluginLoader pluginLoader = service.getPluginLoader();
 
@@ -54,7 +56,7 @@ public class InvalidateCachesAction extends AnAction {
                 });
 
                 SwingUtilities.invokeLater(() ->
-                        Messages.showInfoMessage(project, "Cache invalidated successfully!", "Cache Invalidation")
+                    JOptionPane.showMessageDialog(new JTextPane(), "Cache invalidated successfully!", "Cache Invalidation", JOptionPane.INFORMATION_MESSAGE)
                 );
             }
         });

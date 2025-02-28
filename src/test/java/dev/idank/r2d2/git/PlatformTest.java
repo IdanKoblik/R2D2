@@ -12,8 +12,8 @@ class PlatformTest {
         Platform github = Platform.GITHUB;
         Platform gitlab = Platform.GITLAB;
 
-        assertEquals("github", github.getName());
-        assertEquals("gitlab", gitlab.getName());
+        assertEquals("github", github.test());
+        assertEquals("gitlab", gitlab.test());
     }
 
     @Test

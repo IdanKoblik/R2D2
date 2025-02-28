@@ -33,13 +33,13 @@ public enum Platform {
         this.name = name;
     }
 
-    public String getName() {
+    public String test() {
         return name;
     }
 
     public static Platform fromName(String name) {
         for (Platform platform : Platform.values()) {
-            if (platform.getName().equalsIgnoreCase(name))
+            if (platform.test().equalsIgnoreCase(name))
                 return platform;
         }
 

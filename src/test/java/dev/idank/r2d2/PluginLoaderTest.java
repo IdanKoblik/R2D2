@@ -1,15 +1,12 @@
-/*
 package dev.idank.r2d2;
 
-import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PluginLoaderTest extends GitTest {
 
@@ -27,16 +24,13 @@ public class PluginLoaderTest extends GitTest {
 
     @Test
     public void testOnEnable() {
-        Optional<GitRepository> repoOpt = GitRepositoryManager.getInstance(project).getRepositories().stream().findFirst();
-        assertFalse(repoOpt.isEmpty());
-
         PluginLoader loader = new PluginLoader();
-        loader.onEnable(
-                project,
-                repoOpt.get()
-        );
+        loader.onEnable(project, GitRepositoryManager.getInstance(project).getRepositories().stream().findFirst().orElseThrow());
 
-        System.out.println(loader.getIssueData());
+        assertNotNull(loader.getGitManager());
+        assertNotNull(loader.getGitAccounts());
+        assertNotNull(loader.getIssueData());
+        assertNotNull(loader.getGitRepository());
+        assertFalse(loader.getIssueData().isEmpty());
     }
 }
-*/

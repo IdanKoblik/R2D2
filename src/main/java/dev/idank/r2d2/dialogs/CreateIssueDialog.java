@@ -23,8 +23,6 @@ SOFTWARE.
  */
 package dev.idank.r2d2.dialogs;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.options.Configurable;
@@ -35,6 +33,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import dev.idank.r2d2.PluginLoader;
+import dev.idank.r2d2.git.GitHost;
 import dev.idank.r2d2.git.GitHostFactory;
 import dev.idank.r2d2.git.Platform;
 import dev.idank.r2d2.git.data.AuthData;
@@ -44,20 +43,21 @@ import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.GithubIssueRequest;
 import dev.idank.r2d2.git.request.GitlabIssueRequest;
 import dev.idank.r2d2.git.request.IssueRequest;
+import dev.idank.r2d2.git.response.GithubIssueResponse;
+import dev.idank.r2d2.git.response.GitlabIssueResponse;
+import dev.idank.r2d2.git.response.IssueResponse;
 import dev.idank.r2d2.listeners.AccountComboListener;
 import dev.idank.r2d2.listeners.SearchListener;
 import dev.idank.r2d2.utils.UIUtils;
-import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CreateIssueDialog extends DialogWrapper {
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public static final int MAX_ISSUE_TITLE_LEN = 255;
     public static final int TEXT_FIELD_WIDTH = 20;
@@ -323,47 +323,30 @@ public class CreateIssueDialog extends DialogWrapper {
         return null;
     }
 
-    private void processIssueCreation(GitUser user, IssueRequest request) {
-        try (Response response = new GitHostFactory().createGitHost(project, user).createIssue(request)) {
-            if (!response.isSuccessful()) {
-                UIUtils.showError("An error appeared while creating an issue: " + response.code() + "\n" + "Target: " + response.request().url(), titleField);
-                return;
-            }
+    private synchronized void processIssueCreation(GitUser user, IssueRequest request) {
+        GitHost gitHost = new GitHostFactory().createGitHost(project, user);
+        IssueResponse response = null;
+        try {
+            if (user.platform().equals(Platform.GITLAB))
+                response = gitHost.createIssue(request, GitlabIssueResponse.class);
+            else if (user.platform().equals(Platform.GITHUB))
+                response = gitHost.createIssue(request, GithubIssueResponse.class);
 
-            String bodyString = response.body() != null ? response.body().string() : "";
             UIUtils.showSuccess("Successfully created an issue", titleField);
-
             if (lineNum >= 0)
-                updateDocument(bodyString, user.platform());
-        } catch (Exception e) {
-            UIUtils.showError("An error occurred while processing the request", titleField);
+                updateDocument(response.url());
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void updateDocument(String responseBody, Platform platform) {
+    private void updateDocument(String url) {
         try {
-            JsonNode jsonArray = objectMapper.readTree(responseBody);
             int start = document.getLineStartOffset(lineNum);
             int end = document.getLineEndOffset(lineNum);
             String originalText = document.getText(new TextRange(start, end));
 
-            String url = "";
-            if (platform == Platform.GITLAB) {
-                url = jsonArray.get("web_url").asText();
-                if (url == null || url.isEmpty()) {
-                    UIUtils.showError("Missing 'web_url' in response body.", titleField);
-                    return;
-                }
-            } else if (platform == Platform.GITHUB) {
-                url = jsonArray.get("html_url").asText();
-                if (url == null || url.isEmpty()) {
-                    UIUtils.showError("Missing 'html_url' in response body.", titleField);
-                    return;
-                }
-            }
-
-            String finalUrl = url;
-            WriteCommandAction.runWriteCommandAction(project, () -> document.replaceString(start, end, originalText + " " + finalUrl));
+            WriteCommandAction.runWriteCommandAction(project, () -> document.replaceString(start, end, originalText + " " + url));
         } catch (Exception e) {
             UIUtils.showError("Error updating document text.\n" + e.getMessage(), titleField);
         }
@@ -386,6 +369,10 @@ public class CreateIssueDialog extends DialogWrapper {
         return (String) milestoneCombo.getSelectedItem();
     }
 
+    public JComboBox<String> getAccountCombo() {
+        return accountCombo;
+    }
+
     public Set<String> getSelectedItems(JPanel panel) {
         Set<String> selected = new HashSet<>();
         for (Component comp : panel.getComponents()) {
@@ -399,6 +386,10 @@ public class CreateIssueDialog extends DialogWrapper {
 
     public Set<Component> getComponents() {
         return Collections.unmodifiableSet(this.components);
+    }
+
+    public IssueData getData() {
+        return data;
     }
 
     public void setData(IssueData data) {
@@ -445,8 +436,12 @@ public class CreateIssueDialog extends DialogWrapper {
         SwingUtilities.invokeLater(() -> {
             panel.revalidate();
             panel.repaint();
-            getContentPane().revalidate();
-            getContentPane().repaint();
+
+            Container contentPane = getContentPane();
+            if (contentPane != null) {
+                contentPane.revalidate();
+                contentPane.repaint();
+            }
         });
     }
 }
