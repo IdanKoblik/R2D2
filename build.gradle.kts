@@ -6,6 +6,7 @@ plugins {
     id("idea")
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
     id("org.jetbrains.intellij.platform") version "2.2.0"
+    id("org.cadixdev.licenser") version "0.6.1"
 }
 
 group = "dev.idank"
@@ -68,34 +69,16 @@ tasks {
         untilBuild.set("243.*")
     }
 
-    register("license") {
-        group = "verification"
-        doLast {
-            val licenseFile = file("LICENSE.md")
-            if (!licenseFile.exists())
-                throw GradleException("LICENSE.md file is missing!")
+    license {
+        header = project.resources.text.fromFile(rootProject.file("LICENSE.md"))
 
-            val licenseContent = licenseFile.readText().trim()
-            val expected = "Copyright (c) ${LocalDate.now().year} Idan Koblik"
-            if (!licenseContent.contains(expected))
-                throw GradleException("License in LICENSE.md is outdated!")
-
-            val srcDir = file("src")
-            srcDir.walkTopDown().forEach { file ->
-                if (file.isFile and (file.endsWith(".java") or file.endsWith("kt"))) {
-                    val content = file.readText().trim()
-
-                    if (!content.contains(licenseContent))
-                        throw GradleException("File ${file.path} does not contain the required MIT license at the top!")
-                }
-            }
+        properties {
+            "year" to LocalDate.now().year
         }
-
-        outputs.upToDateWhen { false }
     }
 
     check {
-        dependsOn("test", "license")
+        dependsOn("test", "updateLicenses")
     }
 
     test {
