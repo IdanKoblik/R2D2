@@ -43,6 +43,7 @@ jobs:
       GIT_USER: ${{ secrets.GIT_USER }}
       GH_AUTH: ${{ secrets.GH_AUTH }}
       GL_AUTH: ${{ secrets.GL_AUTH }}
+      TESTING_TOKEN: ${{ secrets.TESTING_TOKEN }}
 
   publish:
     needs: run_tests

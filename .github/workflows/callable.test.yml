@@ -9,6 +9,8 @@ on:
         required: true
       GL_AUTH:
         required: true
+      TESTING_TOKEN:
+        required: true
 
 permissions:
   contents: read
