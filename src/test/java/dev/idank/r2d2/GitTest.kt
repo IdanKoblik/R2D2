@@ -25,14 +25,14 @@ open class GitTest {
     protected lateinit var githubAccountManager: GHAccountManager
 
     protected val defaultGithubAccount: GithubAccount = GithubAccount(
-        System.getProperty("github.user"),
+        System.getProperty("github.user") ?: System.getProperty("GH_USER"),
         GithubServerPath("github.com"),
-        System.getProperty("github.token")
+        System.getProperty("github.token") ?: System.getenv("GH_TOKEN")
     )
 
     protected val defaultGitlabAccount: GitLabAccount = GitLabAccount(
-        System.getProperty("gitlab.token"),
-        System.getProperty("gitlab.user"),
+        System.getProperty("gitlab.token") ?: System.getProperty("GL_TOKEN"),
+        System.getProperty("gitlab.user") ?: System.getProperty("GL_USER"),
         GitLabServerPath("https://gitlab.com")
     )
 
