@@ -53,7 +53,7 @@ jobs:
           GIT_USER: ${{ secrets.GIT_USER }}
           GH_AUTH: ${{ secrets.GH_AUTH }}
           GL_AUTH: ${{ secrets.GL_AUTH }}
-        run: ./gradlew check
+        run: xvfb-run ./gradlew check
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
         if: success() || failure()
