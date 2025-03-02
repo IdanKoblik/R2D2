@@ -14,6 +14,7 @@ public class UIUtilsTest {
 
     @BeforeEach
     public void setUp() {
+        System.setProperty("java.awt.headless", "false");
         JFrame frame = GuiActionRunner.execute(() -> new JFrame());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window = new FrameFixture(frame);
