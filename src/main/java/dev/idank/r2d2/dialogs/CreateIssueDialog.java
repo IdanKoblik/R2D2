@@ -336,7 +336,7 @@ public class CreateIssueDialog extends DialogWrapper {
             if (lineNum >= 0)
                 updateDocument(response.url());
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            UIUtils.showSuccess("An error was throwen while trying to open an issue: " + e.getMessage(), titleField);
         }
     }
 

@@ -31,7 +31,9 @@ import dev.idank.r2d2.git.data.issue.IssueData;
 import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.IssueRequest;
 import dev.idank.r2d2.git.response.IssueResponse;
+import dev.idank.r2d2.utils.UIUtils;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -144,7 +146,8 @@ public abstract class GitService {
             String responseBody = response.body();
             return objectMapper.readTree(responseBody);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Request failed due to an I/O error", e);
+            UIUtils.showError("Request failed due to an I/O error: " + e, new JOptionPane());
+            return null;
         }
     }
 

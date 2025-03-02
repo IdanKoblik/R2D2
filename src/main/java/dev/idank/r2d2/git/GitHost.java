@@ -11,7 +11,7 @@ public abstract class GitHost extends GitService {
     protected final Project project;
     protected final GitUser user;
 
-    public GitHost(Project project, GitUser user) {
+    protected GitHost(Project project, GitUser user) {
         this.project = project;
         this.user = user;
     }
