@@ -45,7 +45,7 @@ public abstract class GitService {
     protected final ObjectMapper objectMapper = new ObjectMapper();
     protected AuthData authData;
 
-    public abstract IssueData fetchIssueData() throws IOException;
+    public abstract IssueData fetchIssueData();
 
     public <T extends IssueResponse> T createIssue(IssueRequest requestData, Class<T> clazz) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()

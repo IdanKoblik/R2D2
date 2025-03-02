@@ -68,12 +68,7 @@ public class PluginLoader {
             GitHost gitHost = factory.createGitHost(project, gitUser);
             gitHost.getAuthData().ifPresent(data -> {
                 this.userManager.addUserData(gitUser, data);
-
-                try {
-                    issueData.put(data, gitHost.fetchIssueData());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                issueData.put(data, gitHost.fetchIssueData());
             });
         }
     }
