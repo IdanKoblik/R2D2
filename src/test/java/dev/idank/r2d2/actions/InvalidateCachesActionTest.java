@@ -6,6 +6,7 @@ import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.services.PluginLoaderService;
 import dev.idank.r2d2.utils.PluginUtils;
 import git4idea.repo.GitRepositoryManager;
+import org.assertj.swing.annotation.GUITest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ public class InvalidateCachesActionTest extends GitTest {
     }
 
     @Test
+    @GUITest
     public void testInvalidateCaches() {
         myFixture.configureByText("test.txt", "test");
 

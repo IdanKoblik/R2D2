@@ -1,5 +1,6 @@
 package dev.idank.r2d2.utils;
 
+import org.assertj.swing.annotation.GUITest;
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.FrameFixture;
 import org.junit.jupiter.api.AfterEach;
@@ -26,6 +27,7 @@ public class UIUtilsTest {
     }
 
     @Test
+    @GUITest
     public void testShowError() {
         GuiActionRunner.execute(() -> UIUtils.showError("This is an error message", window.target()));
 
@@ -35,6 +37,7 @@ public class UIUtilsTest {
     }
 
     @Test
+    @GUITest
     public void testShowSuccess() {
         GuiActionRunner.execute(() -> UIUtils.showSuccess("This is a success message", window.target()));
 
