@@ -25,16 +25,33 @@ package dev.idank.r2d2.utils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class UIUtils {
 
-    public static void showError(String message, Component parent) {
-        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE));
-    }
+    public static final int TIMEOUT_DELAY = 10000; // 10 seconds
 
+    public static void showError(String message, Component parent) {
+        showMessageWithTimeout(message, parent, "Error", JOptionPane.ERROR_MESSAGE);
+    }
 
     public static void showSuccess(String message, Component parent) {
-        SwingUtilities.invokeLater((() -> JOptionPane.showMessageDialog(parent, message, "Success", JOptionPane.INFORMATION_MESSAGE)));
+        showMessageWithTimeout(message, parent, "Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private static void showMessageWithTimeout(String message, Component parent, String title, int messageType) {
+        JOptionPane optionPane = new JOptionPane(message, messageType, JOptionPane.DEFAULT_OPTION);
+        JDialog dialog = optionPane.createDialog(parent, title);
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                dialog.dispose();
+            }
+        }, TIMEOUT_DELAY);
+
+        SwingUtilities.invokeLater(() -> dialog.setVisible(true));
+    }
 }

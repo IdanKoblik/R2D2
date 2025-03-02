@@ -41,6 +41,7 @@ public class InvalidateCachesActionTest extends GitTest {
         EdtTestUtil.runInEdtAndWait(() -> {
             myFixture.testAction(new InvalidateCachesAction());
         });
+
         assertEquals(0, pluginLoader.getIssueData().size());
     }
 }
