@@ -1,38 +1,34 @@
 package dev.idank.r2d2.actions;
 
-import dev.idank.r2d2.BaseTest;
+import dev.idank.r2d2.GitTest;
 import dev.idank.r2d2.PluginLoader;
+import dev.idank.r2d2.services.PluginLoaderService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CreateIssueIntentionActionTest extends BaseTest {
+public class CreateIssueIntentionActionTest extends GitTest {
 
-    private CreateIssueIntentionAction action = new CreateIssueIntentionAction(
-            "test", "test", 2
-    );
+    private CreateIssueIntentionAction action;
+    private PluginLoader pluginLoader;
 
     @BeforeEach
     @Override
-    protected void setUp() throws Exception {
+    protected void setUp() {
         super.setUp();
-        PluginLoader.getInstance().clearCache();
+
+        this.pluginLoader = project.getService(PluginLoaderService.class).getPluginLoader();
+        this.action  = new CreateIssueIntentionAction(
+                "test", "test", 2, pluginLoader
+        );
     }
 
     @AfterEach
     @Override
-    protected void tearDown() throws Exception {
+    protected void tearDown() {
         super.tearDown();
-        PluginLoader.getInstance().clearCache();
-    }
-
-    @Test
-    void testInvoke() {
-        assertDoesNotThrow(() -> {
-            action.invoke(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile());
-        });
     }
 
     @Test
@@ -40,10 +36,19 @@ class CreateIssueIntentionActionTest extends BaseTest {
         assertTrue(action.isAvailable(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile()));
 
         CreateIssueIntentionAction invalidAction = new CreateIssueIntentionAction(
-                "test", "test", -1
+                "test", "test", -1, pluginLoader
         );
 
         assertFalse(invalidAction.isAvailable(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile()));
+    }
+
+    @Test
+    public void testInvoke() {
+        myFixture.configureByText("test.txt", "test");
+
+        assertDoesNotThrow(() -> {
+            action.invoke(myFixture.getProject(), myFixture.getEditor(), myFixture.getFile());
+        });
     }
 
     @Test

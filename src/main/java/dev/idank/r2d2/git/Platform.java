@@ -24,8 +24,8 @@ SOFTWARE.
 package dev.idank.r2d2.git;
 
 public enum Platform {
-    GITLAB("(gitlab)"),
-    GITHUB("(github)");
+    GITLAB("gitlab"),
+    GITHUB("github");
 
     private final String name;
 
@@ -33,13 +33,13 @@ public enum Platform {
         this.name = name;
     }
 
-    public String getName() {
+    public String test() {
         return name;
     }
 
     public static Platform fromName(String name) {
         for (Platform platform : Platform.values()) {
-            if (platform.getName().equalsIgnoreCase(name))
+            if (platform.test().equalsIgnoreCase(name))
                 return platform;
         }
 

@@ -9,6 +9,8 @@ on:
         required: true
       GL_AUTH:
         required: true
+      TESTING_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -21,6 +23,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Install SSH Client 🔑
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.TESTING_TOKEN }}
+
+      - name: Setup known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Clone testing repos
+        run: |
+          mkdir -p /tmp/repo/
+          git clone git@gitlab.com:IdanKoblik/gitlab.git /tmp/repo/gitlab
+          git clone git@github.com:IdanKoblik/github.git /tmp/repo/github
+
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -28,12 +48,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Run integration tests
+        uses: GabrielBB/xvfb-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_USER: ${{ secrets.GIT_USER }}
           GH_AUTH: ${{ secrets.GH_AUTH }}
           GL_AUTH: ${{ secrets.GL_AUTH }}
-        run: ./gradlew check
+        with:
+          run: ./gradlew check
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
         if: success() || failure()

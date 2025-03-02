@@ -32,7 +32,7 @@ class SearchListenerTest {
 
     @Test
     void testInvalidFilterItems() {
-        Vector<String> items = searchListener.filterItems("Test");
+        Vector<String> items = searchListener.filterItems("Testing");
         assertTrue(items.isEmpty());
     }
 

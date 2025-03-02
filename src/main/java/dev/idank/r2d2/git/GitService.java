@@ -21,36 +21,47 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-package dev.idank.r2d2.git.api;
+package dev.idank.r2d2.git;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.idank.r2d2.git.data.IssueData;
-import dev.idank.r2d2.git.data.Milestone;
+import dev.idank.r2d2.git.data.AuthData;
 import dev.idank.r2d2.git.data.User;
-import dev.idank.r2d2.git.data.UserData;
+import dev.idank.r2d2.git.data.issue.IssueData;
+import dev.idank.r2d2.git.data.issue.Milestone;
 import dev.idank.r2d2.git.request.IssueRequest;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import dev.idank.r2d2.git.response.IssueResponse;
+import dev.idank.r2d2.utils.UIUtils;
 
+import javax.swing.*;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract sealed class GitService<R extends IssueRequest> permits GithubService, GitlabService {
+public abstract class GitService {
 
     protected final ObjectMapper objectMapper = new ObjectMapper();
-    protected final OkHttpClient client = new OkHttpClient();
+    protected AuthData authData;
 
-    protected final UserData data;
+    public abstract IssueData fetchIssueData();
 
-    protected GitService(UserData data) {
-        this.data = data;
+    public <T extends IssueResponse> T createIssue(IssueRequest requestData, Class<T> clazz) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getIssueCreationEndpoint()))
+                .header("Authorization", "Bearer " + authData.token())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestData)))
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(response.body(), clazz);
     }
-
-    public abstract Response createIssue(R request) throws IOException;
-    public abstract IssueData fetchIssueData() throws IOException;
 
     protected Set<User> fetchUsers(String url, String usernameProperty) {
         JsonNode jsonArray = createGetRequest(url);
@@ -119,20 +130,26 @@ public abstract sealed class GitService<R extends IssueRequest> permits GithubSe
     }
 
     private JsonNode createGetRequest(String url) {
-        Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", "Bearer " + data.token())
-                .get()
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + authData.token())
+                .header("Content-Type", "application/json")
+                .GET()
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.body() == null)
                 return null;
 
-            String responseBody = response.body().string();
+            String responseBody = response.body();
             return objectMapper.readTree(responseBody);
-        } catch (IOException e) {
-            throw new RuntimeException("Request failed due to an I/O error", e);
+        } catch (IOException | InterruptedException e) {
+            UIUtils.showError("Request failed due to an I/O error: " + e, new JOptionPane());
+            return null;
         }
     }
+
+    protected abstract String getIssueCreationEndpoint();
 }

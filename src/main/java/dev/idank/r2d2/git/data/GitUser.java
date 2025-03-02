@@ -25,16 +25,22 @@ package dev.idank.r2d2.git.data;
 
 import dev.idank.r2d2.git.Platform;
 
+/**
+ * Git user
+ * @param username - the git username
+ * @param instance - the instance of the git hosting server (<a href="https://github.com">...</a>, <a href="https://gitlab.com">...</a>, e.g)
+ * @param projectInfo - the projectInfo of a git repo
+ * @param platform - the platform of a git hosting (github, gitlab, e.g)
+ */
 public record GitUser(
         String username,
         String instance,
-        String namespace,
-        String url,
+        GitProjectInfo projectInfo,
         Platform platform
 ) {
 
     @Override
     public String toString() {
-        return "%s / %s / %s [%s]".formatted(username, instance, platform, namespace);
+        return "%s / %s / %s [%s]".formatted(username, instance, platform, projectInfo.namespace());
     }
 }

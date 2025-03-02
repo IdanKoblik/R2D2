@@ -20,7 +20,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
+
 package dev.idank.r2d2.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
@@ -29,9 +30,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.project.Project;
 import dev.idank.r2d2.PluginLoader;
-import dev.idank.r2d2.git.GitUserExtractor;
+import dev.idank.r2d2.services.PluginLoaderService;
+import dev.idank.r2d2.utils.UIUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -40,24 +42,21 @@ public class InvalidateCachesAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        PluginLoader instance = PluginLoader.getInstance();
-        GitUserExtractor gitUserExtractor = GitUserExtractor.INSTANCE;
+        Project project = event.getProject();
+        if (project == null)
+            return;
 
-        ProgressManager.getInstance().run(new Task.Backgroundable(event.getProject(), "Invalidating Caches", false) {
+        PluginLoaderService service = project.getService(PluginLoaderService.class);
+        PluginLoader pluginLoader = service.getPluginLoader();
+
+        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Invalidating caches", false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                if (ApplicationManager.getApplication().isUnitTestMode())
-                    return;
-
-
                 ApplicationManager.getApplication().runReadAction(() -> {
-                    gitUserExtractor.invalidateCache();
-                    instance.loadIssueData(event.getProject());
+                    pluginLoader.onEnable(project, pluginLoader.getGitRepository());
                 });
 
-                SwingUtilities.invokeLater(() ->
-                        Messages.showInfoMessage(event.getProject(), "Cache invalidated successfully!", "Cache Invalidation")
-                );
+                UIUtils.showSuccess("Cache invalidated successfully!", new JOptionPane());
             }
         });
     }

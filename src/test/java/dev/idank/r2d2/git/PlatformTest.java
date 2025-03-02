@@ -12,16 +12,16 @@ class PlatformTest {
         Platform github = Platform.GITHUB;
         Platform gitlab = Platform.GITLAB;
 
-        assertEquals("(github)", github.getName());
-        assertEquals("(gitlab)", gitlab.getName());
+        assertEquals("github", github.test());
+        assertEquals("gitlab", gitlab.test());
     }
 
     @Test
     void testFromName() {
-        Platform github = Platform.fromName("(github)");
+        Platform github = Platform.fromName("github");
         assertEquals(Platform.GITHUB, github);
 
-        Platform gitlab = Platform.fromName("(gitlab)");
+        Platform gitlab = Platform.fromName("gitlab");
         assertEquals(Platform.GITLAB, gitlab);
 
         assertThrows(IllegalArgumentException.class, () -> {

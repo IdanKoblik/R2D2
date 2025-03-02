@@ -3,6 +3,7 @@ import java.time.LocalDate
 
 plugins {
     id("java")
+    id("idea")
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
     id("org.jetbrains.intellij.platform") version "2.2.0"
 }
@@ -11,7 +12,7 @@ group = "dev.idank"
 version = figureVersion()
 
 fun figureVersion(): String {
-    return (if (System.getenv("VERSION") == null) "dev" else System.getenv("VERSION"))
+    return (if (System.getenv("VERSION") == null) "dev-SNAPSHOT" else System.getenv("VERSION"))
 }
 
 repositories {
@@ -46,8 +47,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlin.version")}")
 
+    testImplementation("org.mockito:mockito-core:5.15.2")
     testImplementation("org.junit.jupiter:junit-jupiter:${findProperty("junit.version")}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${findProperty("okhttp.version")}")
+    testImplementation(kotlin("test"))
 }
 
 tasks {

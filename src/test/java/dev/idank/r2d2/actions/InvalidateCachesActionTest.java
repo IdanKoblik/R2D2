@@ -1,33 +1,47 @@
 package dev.idank.r2d2.actions;
 
-import com.intellij.testFramework.EditorTestUtil;
 import com.intellij.testFramework.EdtTestUtil;
-import dev.idank.r2d2.BaseTest;
+import dev.idank.r2d2.GitTest;
 import dev.idank.r2d2.PluginLoader;
+import dev.idank.r2d2.services.PluginLoaderService;
+import dev.idank.r2d2.utils.PluginUtils;
+import git4idea.repo.GitRepositoryManager;
+import org.assertj.swing.annotation.GUITest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class InvalidateCachesActionTest extends BaseTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class InvalidateCachesActionTest extends GitTest {
 
     @BeforeEach
     @Override
-    protected void setUp() throws Exception {
+    protected void setUp() {
         super.setUp();
-        PluginLoader.getInstance().clearCache();
     }
 
     @AfterEach
     @Override
-    protected void tearDown() throws Exception {
+    protected void tearDown() {
         super.tearDown();
-        PluginLoader.getInstance().clearCache();
     }
 
     @Test
-    void testExec() {
+    @GUITest
+    public void testInvalidateCaches() {
+        myFixture.configureByText("test.txt", "test");
+
+        PluginLoader pluginLoader = project.getService(PluginLoaderService.class).getPluginLoader();
+        pluginLoader.onEnable(project, GitRepositoryManager.getInstance(project).getRepositories().stream().findFirst().orElseThrow());
+        assertEquals(1, pluginLoader.getIssueData().size());
+
+        PluginUtils.INSTANCE.updateGithubAccount(githubAccountManager, getDefaultGithubAccount(), PluginUtils.Action.REMOVE);
+
         EdtTestUtil.runInEdtAndWait(() -> {
-            EditorTestUtil.executeAction(myFixture.getEditor(), "dev.idank.r2d2.actions.InvalidateCachesAction", true);
+            myFixture.testAction(new InvalidateCachesAction());
         });
+
+        assertEquals(0, pluginLoader.getIssueData().size());
     }
 }

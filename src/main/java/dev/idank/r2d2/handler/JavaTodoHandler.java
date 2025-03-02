@@ -29,6 +29,7 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.impl.search.PsiTodoSearchHelperImpl;
 import com.intellij.psi.search.TodoItem;
+import dev.idank.r2d2.PluginLoader;
 import dev.idank.r2d2.TodoContext;
 import dev.idank.r2d2.TodoData;
 import dev.idank.r2d2.TodoDescriptionBuilder;
@@ -41,10 +42,13 @@ import static dev.idank.r2d2.TodoDescriptionBuilder.*;
 public class JavaTodoHandler {
 
     private final TodoContext context;
+
+    private static PluginLoader pluginLoader;
     private static int lineNum = -1;
 
-    public JavaTodoHandler(TodoContext context) {
+    public JavaTodoHandler(TodoContext context, PluginLoader pluginLoader) {
         this.context = context;
+        JavaTodoHandler.pluginLoader = pluginLoader;
     }
 
     public void process(AnnotationHolder holder) {
@@ -58,7 +62,7 @@ public class JavaTodoHandler {
     private void processTodoItem(TodoItem todo, AnnotationHolder holder) {
         String todoText = getTodoText(todo);
 
-        this.lineNum = context.getDocument().getLineNumber(todo.getTextRange().getStartOffset());
+        lineNum = context.getDocument().getLineNumber(todo.getTextRange().getStartOffset());
         String fullLine = getFullLine(lineNum);
         Optional<TodoData> todoData = parseTodoData(todoText, fullLine, lineNum);
 
@@ -142,7 +146,7 @@ public class JavaTodoHandler {
         holder.newAnnotation(HighlightSeverity.INFORMATION, "Create issue")
                 .range(range)
                 .highlightType(ProblemHighlightType.INFORMATION)
-                .withFix(new CreateIssueIntentionAction(title, description, lineNum))
+                .withFix(new CreateIssueIntentionAction(title, description, lineNum, pluginLoader))
                 .create();
     }
 }
