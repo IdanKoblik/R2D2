@@ -6,7 +6,7 @@ import dev.idank.r2d2.git.data.GitUser;
 
 import java.util.Optional;
 
-public abstract class GitHost extends GitService {
+public sealed abstract class GitHost extends GitService permits GithubHost, GitlabHost {
 
     protected final Project project;
     protected final GitUser user;

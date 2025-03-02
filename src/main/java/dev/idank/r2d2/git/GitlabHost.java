@@ -11,7 +11,7 @@ import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAcco
 
 import java.util.Set;
 
-public class GitlabHost extends GitHost {
+public final class GitlabHost extends GitHost {
 
     private final PersistentGitLabAccountManager accountManager = new PersistentGitLabAccountManager();
     private final String namespace;

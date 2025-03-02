@@ -10,7 +10,7 @@ import org.jetbrains.plugins.github.util.GHCompatibilityUtil;
 
 import java.util.Optional;
 
-public class GithubHost extends GitHost {
+public final class GithubHost extends GitHost {
 
     public GithubHost(Project project, GitUser user) {
         super(project, user);
