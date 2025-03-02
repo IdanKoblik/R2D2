@@ -1,6 +1,9 @@
 # Changelog
 
 ## v2.3-SNAPSHOT
+- Refactored section of the code that were causing unnecessary complexity and lag
+- Improved overall functionality and stability of the plugin
+- Fix a bug where license action in gradle script wont find missing license classes and fix them
 - Add more stable code and tests
 - Add more efficient thread work
 - Fix minor bugs in the code
