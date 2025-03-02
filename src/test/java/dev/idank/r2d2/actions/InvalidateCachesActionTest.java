@@ -17,6 +17,7 @@ public class InvalidateCachesActionTest extends GitTest {
     @BeforeEach
     @Override
     protected void setUp() {
+        System.setProperty("java.awt.headless", "true");
         super.setUp();
     }
 
@@ -32,7 +33,6 @@ public class InvalidateCachesActionTest extends GitTest {
 
         PluginLoader pluginLoader = project.getService(PluginLoaderService.class).getPluginLoader();
         pluginLoader.onEnable(project, GitRepositoryManager.getInstance(project).getRepositories().stream().findFirst().orElseThrow());
-        System.out.println(pluginLoader.getIssueData());
         assertEquals(1, pluginLoader.getIssueData().size());
 
         PluginUtils.INSTANCE.updateGithubAccount(githubAccountManager, getDefaultGithubAccount(), PluginUtils.Action.REMOVE);

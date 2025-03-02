@@ -12,6 +12,7 @@ public class PluginUtilsTest extends GitTest {
     @BeforeEach
     @Override
     protected void setUp() {
+        System.setProperty("java.awt.headless", "true");
         super.setUp();
     }
 

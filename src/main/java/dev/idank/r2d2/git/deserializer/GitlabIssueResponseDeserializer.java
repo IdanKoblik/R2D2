@@ -13,7 +13,6 @@ public class GitlabIssueResponseDeserializer extends JsonDeserializer<GitlabIssu
     @Override
     public GitlabIssueResponse deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException, JacksonException {
         JsonNode node = parser.getCodec().readTree(parser);
-        System.out.println(node);
         return new GitlabIssueResponse(
                 node.get("web_url").asText(),
                 node.get("title").asText(),
