@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 @Service(Service.Level.PROJECT)
 public final class PluginLoaderService {
 
-    private PluginLoader pluginLoader;
+    private final PluginLoader pluginLoader;
 
     public PluginLoaderService(@NotNull Project project) {
         this.pluginLoader = new PluginLoader();
