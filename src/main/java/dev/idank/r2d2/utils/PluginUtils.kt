@@ -24,29 +24,20 @@
 
 package dev.idank.r2d2.utils
 
+import com.intellij.collaboration.auth.AccountManager
+import com.intellij.collaboration.auth.ServerAccount
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.plugins.github.authentication.accounts.GHAccountManager
-import org.jetbrains.plugins.github.authentication.accounts.GithubAccount
 import org.jetbrains.plugins.gitlab.authentication.accounts.GitLabAccount
 import org.jetbrains.plugins.gitlab.authentication.accounts.PersistentGitLabAccountManager
 
 object PluginUtils {
 
-    fun updateGitlabAccount(gitLabAccountManager: PersistentGitLabAccountManager, account: GitLabAccount, action: Action) {
+    fun <T: ServerAccount> updateGitAccount(accountManager: AccountManager<T, String>, account: T, action: Action) {
         runBlocking {
             if (action == Action.INSERT)
-                gitLabAccountManager.updateAccount(account, account.id)
+                accountManager.updateAccount(account, account.id)
             else if (action == Action.REMOVE)
-                gitLabAccountManager.removeAccount(account)
-        }
-    }
-
-    fun updateGithubAccount(githubAccountManager: GHAccountManager, account: GithubAccount, action: Action) {
-        runBlocking {
-            if (action == Action.INSERT)
-                githubAccountManager.updateAccount(account, account.id)
-            else if (action == Action.REMOVE)
-                githubAccountManager.removeAccount(account)
+                accountManager.removeAccount(account)
         }
     }
 
