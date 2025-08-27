@@ -26,6 +26,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
+        intellijIdeaCommunity("${findProperty("idea.c.version")}.1")
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("org.jetbrains.plugins.github")
