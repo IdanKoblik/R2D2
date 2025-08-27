@@ -26,8 +26,6 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity(findProperty("idea.c.version").toString())
-
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("org.jetbrains.plugins.github")
@@ -52,6 +50,21 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:${findProperty("junit.version")}")
     testImplementation("com.squareup.okhttp3:mockwebserver:${findProperty("okhttp.version")}")
     testImplementation(kotlin("test"))
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "${findProperty("idea.c.version")}"
+            untilBuild = "${findProperty("idea.c.version")}.*"
+        }
+    }
+
+    pluginVerification {
+        ides {
+            recommended()
+        }
+    }
 }
 
 tasks {

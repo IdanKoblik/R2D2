@@ -2,6 +2,7 @@
 
 ## 2025-b1
 Production-ready release of the plugin!
+- Add support for version 2025.2 of intellij
 - Added major efficiency improvements across the plugin
 - Improved overall stability and reliability
 - Refined codebase for smoother performance in production environments
