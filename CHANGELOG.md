@@ -1,5 +1,11 @@
 # Changelog
 
+## 2025-b1
+Production-ready release of the plugin!
+- Added major efficiency improvements across the plugin
+- Improved overall stability and reliability
+- Refined codebase for smoother performance in production environments
+
 ## v2.3-SNAPSHOT
 - Refactored section of the code that were causing unnecessary complexity and lag
 - Improved overall functionality and stability of the plugin

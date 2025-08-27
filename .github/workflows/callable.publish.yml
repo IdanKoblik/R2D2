@@ -33,7 +33,7 @@ jobs:
 
       - name: Publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_AUTH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_USER: ${{ secrets.GIT_USER }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GL_TOKEN: ${{ secrets.GL_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
       - name: Upload
         uses: IdanKoblik/Changelog@prod
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_AUTH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: ${{ inputs.VERSION }}
           assets: '["./build/distributions/*.zip"]'
