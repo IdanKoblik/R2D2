@@ -41,8 +41,8 @@ jobs:
     uses: ./.github/workflows/callable.test.yml
     secrets:
       GIT_USER: ${{ secrets.GIT_USER }}
-      GH_AUTH: ${{ secrets.GH_AUTH }}
-      GL_AUTH: ${{ secrets.GL_AUTH }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GL_TOKEN: ${{ secrets.GL_TOKEN }}
       TESTING_TOKEN: ${{ secrets.TESTING_TOKEN }}
 
   publish:
@@ -53,6 +53,6 @@ jobs:
       VERSION: ${{ github.event.inputs.name || 'dev' }}
     secrets:
       GIT_USER: ${{ secrets.GIT_USER }}
-      GH_AUTH: ${{ secrets.GH_AUTH }}
-      GL_AUTH: ${{ secrets.GL_AUTH }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GL_TOKEN: ${{ secrets.GL_TOKEN }}
 

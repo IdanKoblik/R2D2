@@ -5,9 +5,9 @@ on:
     secrets:
       GIT_USER:
         required: true
-      GH_AUTH:
+      GH_TOKEN:
         required: true
-      GL_AUTH:
+      GL_TOKEN:
         required: true
       TESTING_TOKEN:
         required: true
@@ -52,8 +52,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_USER: ${{ secrets.GIT_USER }}
-          GH_AUTH: ${{ secrets.GH_AUTH }}
-          GL_AUTH: ${{ secrets.GL_AUTH }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GL_TOKEN: ${{ secrets.GL_TOKEN }}
         with:
           run: ./gradlew check
       - name: Publish Test Report
