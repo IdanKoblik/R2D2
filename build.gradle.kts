@@ -85,10 +85,10 @@ tasks {
         useJUnitPlatform()
 
         systemProperty("gitlab.user", project.findProperty("gitlab.user") ?: System.getenv("GIT_USER"))
-        systemProperty("gitlab.token", project.findProperty("gitlab.token") ?: System.getenv("GL_AUTH"))
+        systemProperty("gitlab.token", project.findProperty("gitlab.token") ?: System.getenv("GL_TOKEN"))
 
         systemProperty("github.user", project.findProperty("github.user") ?: System.getenv("GIT_USER"))
-        systemProperty("github.token", project.findProperty("github.token") ?: System.getenv("GH_AUTH"))
+        systemProperty("github.token", project.findProperty("github.token") ?: System.getenv("GH_TOKEN"))
     }
 
     signPlugin {
