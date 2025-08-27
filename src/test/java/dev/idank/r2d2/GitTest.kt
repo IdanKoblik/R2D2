@@ -75,8 +75,8 @@ open class GitTest {
         this.gitLabAccountManager = PersistentGitLabAccountManager()
         this.githubAccountManager = GHAccountManager()
 
-        PluginUtils.updateGitlabAccount(gitLabAccountManager, defaultGitlabAccount, PluginUtils.Action.INSERT)
-        PluginUtils.updateGithubAccount(githubAccountManager, defaultGithubAccount, PluginUtils.Action.INSERT)
+        PluginUtils.updateGitAccount(gitLabAccountManager, defaultGitlabAccount, PluginUtils.Action.INSERT)
+        PluginUtils.updateGitAccount(githubAccountManager, defaultGithubAccount, PluginUtils.Action.INSERT)
 
         GitVcs.getInstance(myFixture.project).doActivate()
         val projectRoot = PlatformTestUtil.getOrCreateProjectBaseDir(myFixture.project)

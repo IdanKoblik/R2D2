@@ -52,10 +52,7 @@ public class InvalidateCachesAction extends AnAction {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Invalidating caches", false) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                ApplicationManager.getApplication().runReadAction(() -> {
-                    pluginLoader.onEnable(project, pluginLoader.getGitRepository());
-                });
-
+                ApplicationManager.getApplication().runReadAction(() -> pluginLoader.onEnable(project, pluginLoader.getGitRepository()));
                 UIUtils.showSuccess("Cache invalidated successfully!", new JOptionPane());
             }
         });

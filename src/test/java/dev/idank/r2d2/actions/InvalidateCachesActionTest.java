@@ -60,11 +60,9 @@ public class InvalidateCachesActionTest extends GitTest {
         pluginLoader.onEnable(project, GitRepositoryManager.getInstance(project).getRepositories().stream().findFirst().orElseThrow());
         assertEquals(1, pluginLoader.getIssueData().size());
 
-        PluginUtils.INSTANCE.updateGithubAccount(githubAccountManager, getDefaultGithubAccount(), PluginUtils.Action.REMOVE);
+        PluginUtils.INSTANCE.updateGitAccount(githubAccountManager, getDefaultGithubAccount(), PluginUtils.Action.REMOVE);
 
-        EdtTestUtil.runInEdtAndWait(() -> {
-            myFixture.testAction(new InvalidateCachesAction());
-        });
+        EdtTestUtil.runInEdtAndWait(() -> myFixture.testAction(new InvalidateCachesAction()));
 
         assertEquals(0, pluginLoader.getIssueData().size());
     }

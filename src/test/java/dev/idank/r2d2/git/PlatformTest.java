@@ -49,7 +49,7 @@ class PlatformTest {
         assertEquals(Platform.GITLAB, gitlab);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            Platform invalid = Platform.fromName("(invalid)");
+            Platform.fromName("(invalid)");
         });
     }
 }
